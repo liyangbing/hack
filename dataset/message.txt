@@ -1,0 +1,7 @@
+wxid_ec7iz4op5f0t22: from dpdata import LabeledSystem,MultiSystems from glob import glob """ process multi systems """ fs=glob('./*/OUTCAR')  # remeber to change here !!! ms=MultiSystems() for f in fs:     try:         ls=LabeledSystem(f)     except:         print(f)     if len(ls)>0:         ms.append(ls)  ms.to_deepmd_raw('deepmd') ms.to_deepmd_npy('deepmd') 请问用这个脚本转化多个文件下的outcar 为什么出来处理的的type_map 元素顺序和vasp运行时预设定的顺序不一致呢？
+wxid_zy5zzyuyo8m211: 可以通过LabeledSystem(f, type_map=[xxx])来固定type_map
+wxid_ec7iz4op5f0t22: 谢谢[抱拳]
+wxid_c22kqs7awz3422: 请问体系有三种元素，type_map和descriptor里的type应该怎么写
+wxid_b694j67sojc222: 请教各位老师，我用生成的金属势函数分别去跑EMD和NEMD计算热导率，结果发现NEMD的结果要符合预期，而EMD的结果要小两个数量级，是EMD方法不适用于金属体系吗
+wxid_rkdbz6256ypm21: 你的预期是跟什么比？你的金属材料电子热导率和声子热导率能分得开吗？
+wxid_b694j67sojc222: 和ShengBTE计算结果比较
