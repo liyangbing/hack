@@ -9,6 +9,7 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 import sentence_transformers
+from  config.config import *
 
 
 class QAProcessor():
