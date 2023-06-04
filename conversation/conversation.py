@@ -3,17 +3,11 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 
 from langchain.prompts import PromptTemplate
 
-from langchain.vectorstores import Chroma
-
 from langchain.llms import AzureOpenAI
-from langchain.chains import LLMChain
 
-from langchain.chains import RetrievalQA
 from langchain.chains.question_answering import load_qa_chain
 from langchain.chains import ConversationalRetrievalChain
-from langchain.memory import VectorStoreRetrieverMemory
 from langchain.memory import ConversationBufferMemory
-from langchain.chains import ConversationChain
 import sentence_transformers
 
 
