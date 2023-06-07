@@ -1,11 +1,10 @@
 
-# -*- coding: utf-8 -*-
+import gradio as gr
 
 import openai
 import os
 
 openai.api_key = os.environ.get("OPENAI_API_KEY")
-
 
 class Conversation:
     def __init__(self, prompt, num_of_round):
@@ -35,31 +34,29 @@ class Conversation:
             del self.messages[1:3]
         return message
 
+prompt = """你是一个AI直播助手，用中文回答相关问题。你的回答需要满足以下要求:
+1. 你的回答必须是中文
+2. 回答限制在100个字以内"""
 
-if __name__ == "__main__":
+conv = Conversation(prompt, 10)
 
-    prompt = """你是一个程序员，用中文回答相关问题。你的回答需要满足以下要求:
-    1. 你的回答必须是中文
-    2. 回答限制在100个字以内"""
-    conv1 = Conversation(prompt, 7)
-    question1 = "你是谁？"
-    print("User : %s" % question1)
-    print("Assistant : %s\n" % conv1.ask(question1))
+def answer(question, history=[]):
+    history.append(question)
+    response = conv.ask(question)
+    history.append(response)
+    responses = [(u,b) for u,b in zip(history[::2], history[1::2])]
+    print("response:", responses)
+    print("history:", history)
 
-    question2 = "世界上最好的语言是什么？"
-    print("User : %s" % question2)
-    print("Assistant : %s\n" % conv1.ask(question2))
+    return responses, history
 
-    question3 = "中国有多少程序员？"
-    print("User : %s" % question3)
-    print("Assistant : %s\n" % conv1.ask(question3))
+with gr.Blocks(css="#chatbot{height:300px} .overflow-y-auto{height:500px}") as demo:
+    chatbot = gr.Chatbot(elem_id="chatxybot")
+    state = gr.State([])
 
-    question4 = "我问你的第一个问题是什么？"
-    print("User : %s" % question4)
-    print("Assistant : %s\n" % conv1.ask(question4))
+    with gr.Row():
+        txt = gr.Textbox(show_label=False, placeholder="Enter text and press enter").style(container=False)
 
-    question5 = "我问你的第一个问题是什么？"
-    print("User : %s" % question5)
-    print("Assistant : %s\n" % conv1.ask(question5))
+    txt.submit(answer, [txt, state], [chatbot, state])
 
-
+demo.launch()
