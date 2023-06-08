@@ -1,11 +1,9 @@
 from flask import Flask, request
 from werkzeug.wrappers import Response
 import json
-from conversation.langchain_agent import Assistant, langchain_agent
+from conversation.langchain_agent import ask
 
 app = Flask(__name__)
-
-assistant = Assistant()
 
 
 @app.route('/')
@@ -17,11 +15,22 @@ def home():
 
 @app.route('/chat', methods=['POST', 'GET'])
 def chat():
-    question = request.form.get('question')
-    assistant.ask(question)
+    data = request.get_json()
+    key = data.get('key')
+    prompt = data.get('prompt')
+    type = data.get('type')
+    print(key, prompt, type)
 
-    print(question)
+    result = ""
+    if type == 'text':
+        result = ask(prompt)
+    if type == 'audio':
+        pass
+
+    data = {'content': result}
+    response = Response(json.dumps(data), mimetype='application/json')
+    return response
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5005)
+    app.run(host='0.0.0.0', port=50002)
