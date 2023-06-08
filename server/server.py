@@ -1,7 +1,9 @@
 from flask import Flask, request
 from werkzeug.wrappers import Response
 import json
-from conversation.langchain_agent import ask
+import sys
+sys.path.append("../")
+from conversation.simple_completion import ask
 
 app = Flask(__name__)
 
@@ -27,7 +29,10 @@ def chat():
     if type == 'audio':
         pass
 
-    data = {'content': result}
+    data = {
+        'type':type,
+        'data': result
+    }
     response = Response(json.dumps(data), mimetype='application/json')
     return response
 

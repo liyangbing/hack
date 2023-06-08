@@ -18,11 +18,14 @@ from langchain.chat_models import ChatOpenAI
 llm = OpenAI(temperature=0)
 loader = TextLoader('../dataset/assistant_qa.txt')
 documents = loader.load()
-text_splitter = SpacyTextSplitter(chunk_size=256, pipeline="zh_core_web_sm")
+text_splitter = SpacyTextSplitter(chunk_size=16, pipeline="zh_core_web_sm")
 texts = text_splitter.split_documents(documents)
 
 embeddings = OpenAIEmbeddings()
 docsearch = FAISS.from_documents(texts, embeddings)
+
+
+res = docsearch.similarity_search_with_score_by_vector(embeddings.embed_query("这里是黑客松直播间"), 4)
 
 faq_chain = VectorDBQA.from_chain_type(llm=OpenAI(
     temperature=0), vectorstore=docsearch, verbose=True)
@@ -34,8 +37,7 @@ def faq(intput: str) -> str:
 
 tools = [
     Tool(name="FAQ", func=faq,
-         description="直播，直播间等直播相关问题"
-         )
+         description="直播，直播间等直播相关问题")
 ]
 
 PREFIX = """
@@ -55,6 +57,7 @@ prompt_ = ZeroShotAgent.create_prompt(
 memory = ConversationBufferWindowMemory(memory_key="chat_history", k=10, return_messages=True)
 
 llm_chain = LLMChain(llm=ChatOpenAI(temperature=0), prompt=prompt_)
+
 agent = ZeroShotAgent(llm_chain=llm_chain, tools=tools, verbose=True)
 
 agent_chain = AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, verbose=True)
