@@ -2,7 +2,7 @@ import torch
 import os
 import openai
 
-openai_api_key = "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"
+openai_api_key = ""
 embedding_model_name = "text-embedding-ada-002"
 gpt_name = "gpt-35"
 EMBEDDING_DEVICE = "cuda" if torch.cuda.is_available(

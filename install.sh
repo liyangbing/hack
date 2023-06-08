@@ -1,4 +1,4 @@
 pip install -r requirements.txt
 python -m spacy download zh_core_web_sm
-export OPENAI_API_KEY=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
-export DID_API_KEY=bHliaW5nMzE1QDE2My5jb20:SB3Bk8ase4GWQQ-xweYIF
+export OPENAI_API_KEY=
+export DID_API_KEY=
