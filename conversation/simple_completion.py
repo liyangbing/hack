@@ -63,7 +63,7 @@ prompt = PromptTemplate(
     input_variables=["chat_history", "human_input"], 
     template=template
 )
-memory = ConversationBufferWindowMemory(memory_key="chat_history", k=10)
+memory = ConversationBufferWindowMemory(memory_key="chat_history", k=2)
 llm_chain = LLMChain(
     llm=OpenAI(), 
     prompt=prompt, 
