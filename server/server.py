@@ -1,3 +1,4 @@
+import random
 from flask import Flask, request
 from werkzeug.wrappers import Response
 import json
@@ -5,7 +6,16 @@ import sys
 sys.path.append("../")
 from conversation.simple_completion import ask
 
+# 定义数组
+array = ["welcome", "chuckle", "thinking", "thinking2", "crossarm", "showing", "thanks", "thumbsup", "talk"]
+
+# 定义函数来随机返回数组中的一个元素及其索引（索引从1开始）
+def get_random_element_and_index(arr):
+    index = random.randint(0, len(arr) - 1)
+    return arr[index], index + 1
+
 app = Flask(__name__)
+
 
 
 @app.route('/')
@@ -15,6 +25,9 @@ def home():
     return response
 
 
+# API返回的格式：1,text，2，audio（base64编码的wav） 
+# 3，motionIndex：回答对应动作的index（1，2，3，4，5，6，7，8，9）
+# 4，motionDesc：回答对应的动作指令（welcome,chuckle,thinking,thinking2,crossarm,showing,thanks,thumbsup,talk)
 @app.route('/chat', methods=['POST', 'GET'])
 def chat():
     data = request.get_json()
@@ -29,8 +42,11 @@ def chat():
     if type == 'audio':
         pass
 
+    idx, val = get_random_element_and_index(array)
     data = {
         'type':type,
+        'motionIndex': idx,
+        'motionDesc': val,
         'data': result
     }
     response = Response(json.dumps(data), mimetype='application/json')
