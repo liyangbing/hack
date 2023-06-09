@@ -45,7 +45,7 @@ def chat():
     idx, val = get_random_element_and_index(array)
     data = {
         'type':type,
-        'motionIndex': idx,
+        'motionIndex': str(idx),
         'motionDesc': val,
         'data': result
     }
