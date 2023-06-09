@@ -12,7 +12,7 @@ array = ["welcome", "chuckle", "thinking", "thinking2", "crossarm", "showing", "
 # 定义函数来随机返回数组中的一个元素及其索引（索引从1开始）
 def get_random_element_and_index(arr):
     index = random.randint(0, len(arr) - 1)
-    return arr[index], index + 1
+    return index + 1, arr[index]
 
 app = Flask(__name__)
 
