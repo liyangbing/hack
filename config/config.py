@@ -8,6 +8,8 @@ gpt_name = "gpt-35"
 EMBEDDING_DEVICE = "cuda" if torch.cuda.is_available(
 ) else "mps" if torch.backends.mps.is_available() else "cpu"
 
+MODEL_PATH = "/Users/lyb/code/aitest/chatglm-6b"
+
 def set_openai():
     openai.api_key = os.environ["OPENAI_API_KEY"]
 

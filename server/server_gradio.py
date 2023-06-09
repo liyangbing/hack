@@ -13,4 +13,4 @@ iface = gr.Interface(
     outputs="text",  # output specification
 )
 
-iface.launch()
+iface.launch(server_port=8080, ip)
