@@ -40,18 +40,7 @@ def home():
     response = Response(json.dumps(data), mimetype='application/json')
     return response
 
-
-
- # 解码 base64 编码的音频
-
-path = "../dataset/tts.mp3"
-with open(path, "rb") as wav_file:
-    wav_data = wav_file.read()
-    base64_data = base64.b64encode(wav_data)
-    decoded_audio = base64.b64decode(base64_data)
-
-
-
+audio_model = whisper.load_model("base")
 
 # API返回的格式：1,text，2，audio（base64编码的wav） 
 # 3，motionIndex：回答对应动作的index（1，2，3，4，5，6，7，8，9）
@@ -79,8 +68,7 @@ def chat():
         with open(out_file, "wb") as f:
                 f.write(decoded_audio)
 
-        model = whisper.load_model("base")
-        result = model.transcribe(audio=out_file, initial_prompt="这里是黑客松直播间，你是虚拟数字人思思。")
+        result = audio_model.transcribe(audio=out_file, initial_prompt="这里是黑客松直播间，你是虚拟数字人思思。")
         prompt = result["text"]
         type = "audio"
         logging.debug("audio to text: %s", prompt)
