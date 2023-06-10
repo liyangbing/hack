@@ -15,6 +15,7 @@ import random
 import string
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 from flask_cors import CORS
+import whisper
 
 sys.path.append("../")
 from config.config import *
@@ -40,6 +41,18 @@ def home():
     return response
 
 
+
+ # 解码 base64 编码的音频
+
+path = "../dataset/tts.mp3"
+with open(path, "rb") as wav_file:
+    wav_data = wav_file.read()
+    base64_data = base64.b64encode(wav_data)
+    decoded_audio = base64.b64decode(base64_data)
+
+
+
+
 # API返回的格式：1,text，2，audio（base64编码的wav） 
 # 3，motionIndex：回答对应动作的index（1，2，3，4，5，6，7，8，9）
 # 4，motionDesc：回答对应的动作指令（welcome,chuckle,thinking,thinking2,crossarm,showing,thanks,thumbsup,talk)
@@ -51,11 +64,26 @@ def chat():
 
     # print reqest，格式为json
     data = request.get_json()
-    logging.debug("request: %s", data)
 
     key = data.get('key')
     prompt = data.get('prompt')
     type = data.get('type')
+
+    # 如果是音频先转为文字
+    if type == "from_audio":
+        audio_data = data.get('prompt')
+        decoded_audio = base64.b64decode(audio_data)
+        
+        # AUDIO_SAVA_PATH, 时间戳，生成文件名
+        out_file = f"{AUDIO_SAVA_PATH}/{int(time.time())}.wav"
+        with open(out_file, "wb") as f:
+                f.write(decoded_audio)
+
+        model = whisper.load_model("base")
+        result = model.transcribe(audio=out_file, initial_prompt="这里是黑客松直播间，你是虚拟数字人思思。")
+        prompt = result["text"]
+        type = "audio"
+        logging.debug("audio to text: %s", prompt)
 
     answer = ask(prompt)
     idx, val = get_random_element_and_index(array)
@@ -81,6 +109,7 @@ def chat():
         param["text"] = answer
         audio_answer = voice_vits(answer)
         response_data['data'] = audio_answer
+
 
     response = Response(json.dumps(response_data), mimetype='application/json')
     end_time = time.time()
