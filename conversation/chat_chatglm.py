@@ -1,7 +1,11 @@
 from transformers import AutoTokenizer, AutoModel
+import sys
+sys.path.append("../")
+
 from config.config import *
 
-model_path = MODEL_PATH
+
+model_path = CHAT_MODEL_PATH
 
 tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
 model = AutoModel.from_pretrained(model_path, trust_remote_code=True).half().cuda()
@@ -58,9 +62,9 @@ question_template = """
 这一轮福利已经被抢完了，没抢到的家人们不要灰心，咱们等会还有哦。
 ===
 
-你的回答需要满足以下要求:
-1. 你的回答必须是中文
-2. 回答限制在100个字以内
+你的回答必须需要满足以下要求:
+1. 回答必须是中文，不能用英文
+2. 回答要短点，限制在30个字以内
 3. 你的role为system,用户的role为user
 
 问题：{}
@@ -83,5 +87,34 @@ def ask(question):
             del history[1:3]
     return result
 
-response = ask("你好,你是谁")
+
+prompt_action_template = """
+请根据内容，选择一个对应的英文标签，标签如下：
+welcome
+chuckle
+thinking
+thinking2
+crossarm
+showing
+thanks
+thumbsup
+talk
+
+文本内容：{}
+
+请回复对应的英文标签，例如：welcome
+
+"""
+
+def action(answer):
+
+    answer = prompt_action_template.format(answer)
+    logging.debug("answer: {}".format(answer))
+    result, _ = model.chat(tokenizer, answer, [])
+    return result
+
+
+response = action("滔滔不绝")
 print(response)
+
+

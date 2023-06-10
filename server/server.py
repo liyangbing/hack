@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import random
+import time
 from flask import Flask, request
 from werkzeug.wrappers import Response
 import json
@@ -17,7 +18,7 @@ from flask_cors import CORS
 
 sys.path.append("../")
 from config.config import *
-from conversation.chat_chatglm import ask
+from conversation.chat_chatglm import ask,action
 import base64
 
 # 定义数组
@@ -44,33 +45,53 @@ def home():
 # 4，motionDesc：回答对应的动作指令（welcome,chuckle,thinking,thinking2,crossarm,showing,thanks,thumbsup,talk)
 @app.route('/chat', methods=['POST', 'GET'])
 def chat():
+    # 打印方法的消耗时间
+    # 开始时间
+    start = time.time()
+
+    # print reqest，格式为json
     data = request.get_json()
+    logging.debug("request: %s", data)
+
     key = data.get('key')
     prompt = data.get('prompt')
     type = data.get('type')
-    print(key, prompt, type)
 
-    result = ""
-    result = ask(prompt)
-    if type == 'audio':
-        param = {}
-        param["text"] = result
-        result = voice_vits(result)
-
+    answer = ask(prompt)
     idx, val = get_random_element_and_index(array)
-    data = {
+
+    # 遍历数组，判断内容和数组中的元素是否相等,相等记录下对应的索引
+    action_answer = action(answer)
+    logging.debug("result: %s, action %s", answer, action_answer)
+    for i in range(len(array)):
+        if array[i] == action_answer:
+            idx = i + 1
+            val = action_answer
+            break
+
+    response_data = {
         'type':type,
         'motionIndex': str(idx),
         'motionDesc': val,
-        'data': result
+        'data': answer
     }
-    response = Response(json.dumps(data), mimetype='application/json')
+
+    if type == 'audio':
+        param = {}
+        param["text"] = answer
+        audio_answer = voice_vits(answer)
+        response_data['data'] = audio_answer
+
+    response = Response(json.dumps(response_data), mimetype='application/json')
+    end_time = time.time()
+    logging.debug("elase time: %s秒", end_time - start)
+    logging.debug("response: %s", response)
     return response
 
     
 # 语音合成 voice vits
 # 语音合成 voice vits
-def voice_vits(text, id=133, format="wav", lang="auto", length=1, noise=0.667, noisew=0.8, max=50):
+def voice_vits(text, id=133, format="wav", lang="zh", length=1, noise=0.667, noisew=0.8, max=30):
     fields = {
         "text": text,
         "id": str(id),
@@ -88,21 +109,28 @@ def voice_vits(text, id=133, format="wav", lang="auto", length=1, noise=0.667, n
     url = f"{AUDIO_URL}/voice"
 
     res = requests.post(url=url, data=m, headers=headers)
+    if res.status_code != 200:
+        logging.error("voice_vits: %s", res.text)
+        return ""
+    logging.debug("voice_vits: %s", res.headers)
     fname = re.findall("filename=(.+)", res.headers["Content-Disposition"])[0]
     path = f"{AUDIO_SAVA_PATH}/{fname}"
 
     with open(path, "wb") as f:
         f.write(res.content)
-    print(path)
 
+    logging.debug("voice_vits: %s", path)   
+
+    audio_base64_string = ""
     with open(path, "rb") as wav_file:
         wav_data = wav_file.read()
         base64_data = base64.b64encode(wav_data)
-    print(base64_data)
-    return base64_data
+        # 将 Base64 数据转换为字符串
+        audio_base64_string = base64_data.decode("utf-8")
+
+    return audio_base64_string
     
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=50002)
-    voice_vits("你好，我是小智，很高兴认识你。")
 
 
