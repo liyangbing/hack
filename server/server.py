@@ -14,19 +14,14 @@ import random
 import string
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 from flask_cors import CORS
-CORS(app)  # 默认允许所有跨域请求
 
 sys.path.append("../")
+from config.config import *
 from conversation.chat_chatglm import ask
 import base64
 
 # 定义数组
 array = ["welcome", "chuckle", "thinking", "thinking2", "crossarm", "showing", "thanks", "thumbsup", "talk"]
-
-audio_url = "http://127.0.0.1:4523/m1/2848880-0-default/test"
-
-abs_path = "/Users/lyb/code/aitest/hack/audio/"
-base = "http://39.98.94.86:50003"
 
 # 定义函数来随机返回数组中的一个元素及其索引（索引从1开始）
 def get_random_element_and_index(arr):
@@ -34,6 +29,7 @@ def get_random_element_and_index(arr):
     return index + 1, arr[index]
 
 app = Flask(__name__)
+CORS(app)  # 默认允许所有跨域请求
 
 
 @app.route('/')
@@ -89,11 +85,11 @@ def voice_vits(text, id=133, format="wav", lang="auto", length=1, noise=0.667, n
 
     m = MultipartEncoder(fields=fields, boundary=boundary)
     headers = {"Content-Type": m.content_type}
-    url = f"{base}/voice"
+    url = f"{AUDIO_URL}/voice"
 
     res = requests.post(url=url, data=m, headers=headers)
     fname = re.findall("filename=(.+)", res.headers["Content-Disposition"])[0]
-    path = f"{abs_path}/{fname}"
+    path = f"{AUDIO_SAVA_PATH}/{fname}"
 
     with open(path, "wb") as f:
         f.write(res.content)

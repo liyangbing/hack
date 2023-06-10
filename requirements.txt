@@ -9,3 +9,5 @@ openai
 langchain
 spacy
 flask-cors
+requests_toolbelt
+transformers
