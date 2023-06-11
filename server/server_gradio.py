@@ -1,10 +1,18 @@
 import openai, os, time, requests
 import gradio as gr
 from gradio import HTML
-import whisper
+from langchain import OpenAI
+from langchain.chains import ConversationChain
+from langchain.memory import ConversationSummaryBufferMemory
+from langchain.chat_models import ChatOpenAI
 
-audio_model = whisper.load_model("base")
+openai.api_key = os.environ["OPENAI_API_KEY"]
 
+memory = ConversationSummaryBufferMemory(llm=ChatOpenAI(), max_token_limit=2048)
+conversation = ConversationChain(
+    llm=OpenAI(max_tokens=2048, temperature=0.5), 
+    memory=memory,
+)
 
 avatar_url = "https://cdn.discordapp.com/attachments/1065596492796153856/1095617463112187984/John_Carmack_Potrait_668a7a8d-1bb0-427d-8655-d32517f6583d.png"
 
@@ -67,7 +75,7 @@ def get_mp4_video(input, avatar_url=avatar_url):
 def predict(input, history=[]):
     if input is not None:
         history.append(input)
-        response = "hello"   
+        response = conversation.predict(input=input)    
         video_url = get_mp4_video(input=response, avatar_url=avatar_url)
         video_html = f"""<video width="320" height="240" controls autoplay><source src="{video_url}" type="video/mp4"></video>"""
         history.append(response)
@@ -78,9 +86,12 @@ def predict(input, history=[]):
         responses = [(u,b) for u,b in zip(history[::2], history[1::2])]
         return responses, video_html, history
         
+        
+
 def transcribe(audio):
     os.rename(audio, audio + '.wav')
-    transcript = audio_model.transcribe(audio=audio + '.wav', initial_prompt="这里是黑客松直播间，你是虚拟数字人思思。")
+    audio_file = open(audio + '.wav', "rb")
+    transcript = openai.Audio.transcribe("whisper-1", audio_file, prompt="这是一段简体中文的问题。")
     return transcript['text']    
 
 def process_audio(audio, history=[]):
@@ -107,4 +118,4 @@ with gr.Blocks(css="#chatbot{height:500px} .overflow-y-auto{height:500px}") as d
     txt.submit(predict, [txt, state], [chatbot, video, state])
     audio.change(process_audio, [audio, state], [chatbot, video, state])
     
-demo.launch(server_name="0.0.0.0", server_port=50001)
+demo.launch()
