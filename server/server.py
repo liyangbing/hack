@@ -40,7 +40,7 @@ def home():
     response = Response(json.dumps(data), mimetype='application/json')
     return response
 
-audio_model = whisper.load_model("base")
+audio_model = whisper.load_model("small")
 
 # API返回的格式：1,text，2，audio（base64编码的wav） 
 # 3，motionIndex：回答对应动作的index（1，2，3，4，5，6，7，8，9）
@@ -56,10 +56,15 @@ def chat():
 
     key = data.get('key')
     prompt = data.get('prompt')
-    type = data.get('type')
+    data_type = data.get('type')
+
+     # 打印data的数据类型
+    logging.debug("data key: %s, prompt: %s, data_type: %s", key, prompt, data_type)
 
     # 如果是音频先转为文字
-    if type == "from_audio":
+    is_from_audio = False
+    from_audio_text = ""
+    if data_type == "from_audio":
         audio_data = data.get('prompt')
         decoded_audio = base64.b64decode(audio_data)
         
@@ -69,9 +74,12 @@ def chat():
                 f.write(decoded_audio)
 
         result = audio_model.transcribe(audio=out_file, initial_prompt="这里是黑客松直播间，你是虚拟数字人思思。")
+        logging.debug("audio to text, out_file:  %s, result: %s,text: %s", out_file,  result, result["text"])
+
         prompt = result["text"]
-        type = "audio"
-        logging.debug("audio to text: %s", prompt)
+        data_type = "audio"
+        is_from_audio = True
+        from_audio_text = prompt
 
     answer = ask(prompt)
     idx, val = get_random_element_and_index(array)
@@ -86,17 +94,20 @@ def chat():
             break
 
     response_data = {
-        'type':type,
+        'type':data_type,
         'motionIndex': str(idx),
         'motionDesc': val,
         'data': answer
     }
 
-    if type == 'audio':
+    if data_type == 'audio':
         param = {}
         param["text"] = answer
         audio_answer = voice_vits(answer)
-        response_data['data'] = audio_answer
+        response_data['data'] = answer
+        response_data['audio_data'] = audio_answer
+        if is_from_audio:
+            response_data['from_audio_data'] = from_audio_text
 
 
     response = Response(json.dumps(response_data), mimetype='application/json')
@@ -149,5 +160,3 @@ def voice_vits(text, id=133, format="wav", lang="zh", length=1, noise=0.667, noi
     
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=50002)
-
-
