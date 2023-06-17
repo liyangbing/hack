@@ -13,3 +13,5 @@ requests_toolbelt
 transformers
 openai-whisper
 cchardet
+websocket-client
+azure-cognitiveservices-speech

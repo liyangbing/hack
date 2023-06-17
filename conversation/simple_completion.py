@@ -71,6 +71,6 @@ llm_chain = LLMChain(
     verbose=True
 )
 
-def ask(question):
+def gpt_ask(question):
     result = llm_chain.predict(human_input=question)
     return result

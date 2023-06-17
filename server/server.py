@@ -19,6 +19,7 @@ import whisper
 
 sys.path.append("../")
 from config.config import *
+
 from conversation.chat_chatglm import ask,action
 from conversation.simple_completion import gpt_ask
 import base64
