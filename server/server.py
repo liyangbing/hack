@@ -20,6 +20,7 @@ import whisper
 sys.path.append("../")
 from config.config import *
 from conversation.chat_chatglm import ask,action
+from conversation.simple_completion import gpt_ask
 import base64
 
 # 定义数组
@@ -81,7 +82,10 @@ def chat():
         is_from_audio = True
         from_audio_text = prompt
 
-    answer = ask(prompt)
+    if IS_CHATGPT:
+        answer = gpt_ask(prompt)
+    else:
+        answer = ask(prompt)
     idx, val = get_random_element_and_index(array)
 
     # 遍历数组，判断内容和数组中的元素是否相等,相等记录下对应的索引
