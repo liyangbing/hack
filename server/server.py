@@ -5,23 +5,19 @@ import time
 from flask import Flask, request
 from werkzeug.wrappers import Response
 import json
-import sys
-import requests
 import json
-import re
-import requests
-import os
 import random
-import string
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 from flask_cors import CORS
 import whisper
 
-sys.path.append("../")
 from config.config import *
 
-from conversation.chat_chatglm import ask,action
-from conversation.simple_completion import gpt_ask
+from conversation.chat_chatglm import ChatGLM6B
+from conversation.simple_completion import ChatSimpleGPT
+from speech.speech_vits import SpeechVits
+from speech.speech_azure import SpeechAzure
+
 import base64
 
 # 定义数组
@@ -34,6 +30,19 @@ def get_random_element_and_index(arr):
 
 app = Flask(__name__)
 CORS(app)  # 默认允许所有跨域请求
+
+# 初始化ChatGLM
+if chat_glm == CHAT_GLM_35:
+    chat_glm = ChatSimpleGPT()
+if chat_glm == CHAT_GLM_6B:
+    
+    chat_glm = ChatGLM6B()
+
+# 初始化voice_gml   
+if voice_gml == VOICE_VITS:
+    voice_gml = SpeechVits()
+if voice_gml == VOICE_AZURE:
+    voice_gml = SpeechAzure()
 
 
 @app.route('/')
@@ -83,21 +92,20 @@ def chat():
         is_from_audio = True
         from_audio_text = prompt
 
-    if IS_CHATGPT:
-        answer = gpt_ask(prompt)
-    else:
-        answer = ask(prompt)
-    idx, val = get_random_element_and_index(array)
-
-    # 遍历数组，判断内容和数组中的元素是否相等,相等记录下对应的索引
-    action_answer = action(answer)
+    # 获取生成式内容
+    
+    answer = chat_glm.ask(prompt)
+    action_answer = chat_glm.action(answer)
+   
     logging.debug("result: %s, action %s", answer, action_answer)
+    idx, val = get_random_element_and_index(array)
     for i in range(len(array)):
         if array[i] == action_answer:
             idx = i + 1
             val = action_answer
             break
 
+    # 生成应答
     response_data = {
         'type':data_type,
         'motionIndex': str(idx),
@@ -106,9 +114,7 @@ def chat():
     }
 
     if data_type == 'audio':
-        param = {}
-        param["text"] = answer
-        audio_answer = voice_vits(answer)
+        audio_answer = voice_gml.text_2_audio(answer)
         response_data['data'] = answer
         response_data['audio_data'] = audio_answer
         if is_from_audio:
@@ -117,51 +123,9 @@ def chat():
 
     response = Response(json.dumps(response_data), mimetype='application/json')
     end_time = time.time()
-    logging.debug("elase time: %s秒", end_time - start)
-    logging.debug("response: %s", response)
+    logging.debug("chat elase time: %s秒, input %s, output %s", end_time - start)
     return response
 
-    
-# 语音合成 voice vits
-# 语音合成 voice vits
-def voice_vits(text, id=133, format="wav", lang="zh", length=1, noise=0.667, noisew=0.8, max=30):
-    fields = {
-        "text": text,
-        "id": str(id),
-        "format": format,
-        "lang": lang,
-        "length": str(length),
-        "noise": str(noise),
-        "noisew": str(noisew),
-        "max": str(max)
-    }
-    boundary = '----VoiceConversionFormBoundary' + ''.join(random.sample(string.ascii_letters + string.digits, 16))
-
-    m = MultipartEncoder(fields=fields, boundary=boundary)
-    headers = {"Content-Type": m.content_type}
-    url = f"{AUDIO_URL}/voice"
-
-    res = requests.post(url=url, data=m, headers=headers)
-    if res.status_code != 200:
-        logging.error("voice_vits: %s", res.text)
-        return ""
-    logging.debug("voice_vits: %s", res.headers)
-    fname = re.findall("filename=(.+)", res.headers["Content-Disposition"])[0]
-    path = f"{AUDIO_SAVA_PATH}/{fname}"
-
-    with open(path, "wb") as f:
-        f.write(res.content)
-
-    logging.debug("voice_vits: %s", path)   
-
-    audio_base64_string = ""
-    with open(path, "rb") as wav_file:
-        wav_data = wav_file.read()
-        base64_data = base64.b64encode(wav_data)
-        # 将 Base64 数据转换为字符串
-        audio_base64_string = base64_data.decode("utf-8")
-
-    return audio_base64_string
     
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=50002)
