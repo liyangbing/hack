@@ -9,14 +9,14 @@ import json
 import random
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 from flask_cors import CORS
-import whisper
 
 from config.config import *
 
 from conversation.chat_chatglm import ChatGLM6B
-from conversation.simple_completion import ChatSimpleGPT
+from conversation.chat_gpt import ChatSimpleGPT
 from speech.speech_vits import SpeechVits
 from speech.speech_azure import SpeechAzure
+from speech.speech_whisper import SpeechWhisper
 
 import base64
 
@@ -33,16 +33,17 @@ CORS(app)  # 默认允许所有跨域请求
 
 # 初始化ChatGLM
 if chat_glm == CHAT_GLM_35:
-    chat_glm = ChatSimpleGPT()
+    chat_glm_impl = ChatSimpleGPT()
 if chat_glm == CHAT_GLM_6B:
-    
-    chat_glm = ChatGLM6B()
+    chat_glm_impl = ChatGLM6B()
 
 # 初始化voice_gml   
-if voice_gml == VOICE_VITS:
-    voice_gml = SpeechVits()
-if voice_gml == VOICE_AZURE:
-    voice_gml = SpeechAzure()
+if voice_glm == VOICE_VITS:
+    voice_glm_impl = SpeechVits()
+if voice_glm == VOICE_AZURE:
+    voice_glm_impl = SpeechAzure()
+
+voice_glm_whisper = SpeechWhisper()
 
 
 @app.route('/')
@@ -51,7 +52,6 @@ def home():
     response = Response(json.dumps(data), mimetype='application/json')
     return response
 
-audio_model = whisper.load_model("small")
 
 # API返回的格式：1,text，2，audio（base64编码的wav） 
 # 3，motionIndex：回答对应动作的index（1，2，3，4，5，6，7，8，9）
@@ -77,25 +77,15 @@ def chat():
     from_audio_text = ""
     if data_type == "from_audio":
         audio_data = data.get('prompt')
-        decoded_audio = base64.b64decode(audio_data)
-        
-        # AUDIO_SAVA_PATH, 时间戳，生成文件名
-        out_file = f"{AUDIO_SAVA_PATH}/{int(time.time())}.wav"
-        with open(out_file, "wb") as f:
-                f.write(decoded_audio)
-
-        result = audio_model.transcribe(audio=out_file, initial_prompt="这里是黑客松直播间，你是虚拟数字人思思。")
-        logging.debug("audio to text, out_file:  %s, result: %s,text: %s", out_file,  result, result["text"])
-
-        prompt = result["text"]
+        prompt = voice_glm_whisper.audio_2_text(audio_data)
         data_type = "audio"
         is_from_audio = True
         from_audio_text = prompt
 
     # 获取生成式内容
     
-    answer = chat_glm.ask(prompt)
-    action_answer = chat_glm.action(answer)
+    answer = chat_glm_impl.ask(prompt)
+    action_answer = chat_glm_impl.action(answer)
    
     logging.debug("result: %s, action %s", answer, action_answer)
     idx, val = get_random_element_and_index(array)
@@ -114,7 +104,7 @@ def chat():
     }
 
     if data_type == 'audio':
-        audio_answer = voice_gml.text_2_audio(answer)
+        audio_answer = voice_glm_impl.text_2_audio(answer)
         response_data['data'] = answer
         response_data['audio_data'] = audio_answer
         if is_from_audio:

@@ -18,14 +18,15 @@ AUDIO_URL = "http://localhost:50003"
 # chat
 CHAT_GLM_35 = "GPT-35"
 CHAT_GLM_6B = "GPT-6B"
-chat_glm = CHAT_GLM_6B
+chat_glm = CHAT_GLM_35
 
 
-#voice
+# text 2 audio
 VOICE_VITS = "vits"
 VOICE_AZURE = "azure"
-voice_gml = VOICE_VITS
+voice_glm = VOICE_AZURE
 
+whisper_local = True
 
 embedding_model_name = "text-embedding-ada-002"
 gpt_name = "gpt-35"
