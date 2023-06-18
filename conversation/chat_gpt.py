@@ -5,8 +5,6 @@ from langchain.llms import OpenAI
 from config.config import *
 from conversation.chat import Chat
 
-openai.api_key = "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"
-
 class ChatSimpleGPT(Chat):
 
     def __init__(self, num_of_round=10):

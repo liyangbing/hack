@@ -24,7 +24,8 @@ class SpeechWhisper(Speech):
         if whisper_local:
             result = self.whisper.transcribe(audio=out_file, initial_prompt="这里是黑客松直播间，你是虚拟数字人思思。")
         else:
-            result = openai.Audio.transcribe("whisper-1", out_file)
+            audio_file= open(out_file, "rb")
+            result = openai.Audio.transcribe("whisper-1", audio_file)
         prompt = result["text"]
 
         end_time = time.time()

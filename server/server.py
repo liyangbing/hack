@@ -113,7 +113,7 @@ def chat():
 
     response = Response(json.dumps(response_data), mimetype='application/json')
     end_time = time.time()
-    logging.debug("chat elase time: %s秒, input %s, output %s", end_time - start)
+    logging.debug("chat elase time: %s秒", end_time - start)
     return response
 
     

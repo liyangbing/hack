@@ -20,13 +20,26 @@ class SpeechAzure:
         result = speech_synthesizer.speak_text_async(text).get()
         stream =speechsdk.AudioDataStream(result)
         end_time = time.time()
-        logging.debug("SpeechAzure text_2_audio elase time: %s秒, text %s", end_time - start_time, text)
 
         # 定义bytear
         resultBytes = bytes()
-        stream.read_data(resultBytes)
+
+        # 设置缓冲区大小
+        buffer_size = 4096
+
+        # 逐次读取数据并追加到字节数组中
+        while True:
+            buffer = bytes(buffer_size)
+            bytes_read = stream.read_data(buffer)
+            if bytes_read == 0:
+                break
+
+            resultBytes += buffer[:bytes_read]
+
         base64_data = base64.b64encode(resultBytes)
         audio_base64_string = base64_data.decode("utf-8")
+        logging.debug("SpeechAzure text_2_audio elase time: %s秒, text %s", end_time - start_time, text)
+
 
         return audio_base64_string
 

@@ -26,7 +26,7 @@ VOICE_VITS = "vits"
 VOICE_AZURE = "azure"
 voice_glm = VOICE_AZURE
 
-whisper_local = True
+whisper_local = False
 
 embedding_model_name = "text-embedding-ada-002"
 gpt_name = "gpt-35"
