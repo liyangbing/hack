@@ -9,8 +9,6 @@ class SpeechWhisper(Speech):
     def __init__(self):
         if whisper_local:
             self.whisper = whisper.load_model("small")
-        else:
-            self.whisper = whisper.load_model("large")
 
     def text_2_audio(self, text):
         pass
@@ -23,7 +21,10 @@ class SpeechWhisper(Speech):
         with open(out_file, "wb") as f:
                 f.write(decoded_audio)
 
-        result = self.whisper.transcribe(audio=out_file, initial_prompt="这里是黑客松直播间，你是虚拟数字人思思。")
+        if whisper_local:
+            result = self.whisper.transcribe(audio=out_file, initial_prompt="这里是黑客松直播间，你是虚拟数字人思思。")
+        else:
+            result = openai.Audio.transcribe("whisper-1", out_file)
         prompt = result["text"]
 
         end_time = time.time()

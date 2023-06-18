@@ -23,7 +23,7 @@ class SpeechAzure:
         logging.debug("SpeechAzure text_2_audio elase time: %s秒, text %s", end_time - start_time, text)
 
         # 定义bytear
-        resultBytes = []
+        resultBytes = bytes()
         stream.read_data(resultBytes)
         base64_data = base64.b64encode(resultBytes)
         audio_base64_string = base64_data.decode("utf-8")
