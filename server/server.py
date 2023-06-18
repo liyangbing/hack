@@ -69,6 +69,9 @@ def chat():
     prompt = data.get('prompt')
     data_type = data.get('type')
 
+    if key != secret_key:
+        return Response(json.dumps({'error': 'key error'}), mimetype='application/json')
+
      # 打印data的数据类型
     logging.debug("data key: %s, prompt: %s, data_type: %s", key, prompt, data_type)
 

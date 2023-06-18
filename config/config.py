@@ -12,7 +12,7 @@ ENV = ENV_PROD
 CHAT_MODEL_PATH = "/opt/chatglm-6b"
 AUDIO_SAVA_PATH = "/mnt/data/audio"
 AUDIO_URL = "http://localhost:50003"
-
+secret_key = "XXXXX"
 
 
 # chat
