@@ -4,21 +4,26 @@ from langchain import LLMChain, PromptTemplate
 from langchain.llms import OpenAI
 from config.config import *
 from conversation.chat import Chat
+import langchain
+from langchain.cache import InMemoryCache
 
 class ChatSimpleGPT(Chat):
 
     def __init__(self, num_of_round=10):
         self.num_of_round = num_of_round
         self.promptTemplate = PromptTemplate(
-            input_variables=["chat_history", "human_input"],
+            # input_variables=["chat_history", "human_input"],
+            input_variables=["human_input"],
+
             template=chat_gpt_question_template
         )
-
-        self.memory = ConversationBufferWindowMemory(memory_key="chat_history", k=num_of_round)
+        langchain.llm_cache = InMemoryCache()
+        logging.debug("cache ChatSimpleGPT init")
+        # self.memory = ConversationBufferWindowMemory(memory_key="chat_history", k=num_of_round)
         self.llm_chain = LLMChain(
             llm=OpenAI(),
             prompt=self.promptTemplate,
-            memory=self.memory,
+         #    memory=self.memory,
             verbose=True
         )
 
