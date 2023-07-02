@@ -32,7 +32,8 @@ redis_host = "localhost"
 redis_port = 6379
 sqllite_db = "/mnt/data/hack/dataset/db.sqlite3"
 qa_jsonl = "/mnt/data/hack/dataset/qa.jsonl"
-vector_distance = 5.0
+#定义向量距离阈值
+distance_threshold = 5
 
 embedding_model_name = "text-embedding-ada-002"
 gpt_name = "gpt-35"
@@ -139,6 +140,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 # 设置日志格式
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.getLogger("watchdog.observers.inotify_buffer").setLevel(logging.WARNING)
 
 openai.api_key = os.environ["OPENAI_API_KEY"]
 

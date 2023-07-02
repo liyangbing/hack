@@ -2,6 +2,7 @@ import numpy as np
 import faiss
 from sentence_transformers import SentenceTransformer
 
+
 class FaissQAIndex:
     def __init__(self, model_name="paraphrase-MiniLM-L6-v2"):
         self.model = SentenceTransformer(model_name)
@@ -45,3 +46,22 @@ class FaissQAIndex:
             if q == question:
                 self.data[i] = (question, new_answer)
         self.build_index()
+
+    def search_by_distance(self, input_question, distance_threshold=0.5):
+        """
+        根据distance阈值检索，调用类方法search, 返回符合条件的1个值
+        小于distance_threshold，返回： {"hit": True, "question": "xxx", "answer": "xxx"}
+        大于distance_threshold，返回： {"hit": False, "question": “xxx", "answer": "xxx"}
+        """
+        results = self.search(input_question)
+        if results[0]["distance"] < distance_threshold:
+            return {"hit": True, "question": results[0]["question"], "answer": results[0]["answer"]}
+        else:
+            return {"hit": False, "question": results[0]["question"], "answer": results[0]["answer"]}
+    
+
+            
+        
+
+        
+        
