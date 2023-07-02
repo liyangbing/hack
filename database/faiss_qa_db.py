@@ -54,10 +54,10 @@ class FaissQAIndex:
         大于distance_threshold，返回： {"hit": False, "question": “xxx", "answer": "xxx"}
         """
         results = self.search(input_question)
+        hit = False
         if results[0]["distance"] < distance_threshold:
-            return {"hit": True, "question": results[0]["question"], "answer": results[0]["answer"]}
-        else:
-            return {"hit": False, "question": results[0]["question"], "answer": results[0]["answer"]}
+            hit = True
+        return {"hit": hit, "question": results[0]["question"], "answer": results[0]["answer"], "distance": results[0]["distance"]}
     
 
             
