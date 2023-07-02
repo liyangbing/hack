@@ -1,78 +1,73 @@
 import streamlit as st
-import sqlite3
+from config import config
 import pandas as pd
+from database.sqllite_db import SQLiteDB
+from database.faiss_qa_db import FaissQAIndex
 
-def create_table():
-    conn = sqlite3.connect("qa.db")
-    c = conn.cursor()
-    c.execute("CREATE TABLE IF NOT EXISTS qa (question TEXT, answer TEXT)")
-    conn.commit()
-    conn.close()
 
-def add_data(question, answer):
-    conn = sqlite3.connect("qa.db")
-    c = conn.cursor()
-    c.execute("INSERT INTO qa (question, answer) VALUES (?, ?)", (question, answer))
-    conn.commit()
-    conn.close()
+class QAApp:
+    def __init__(self):
+        self.db = SQLiteDB(config.sqllite_db)
 
-def view_all_data():
-    conn = sqlite3.connect("qa.db")
-    c = conn.cursor()
-    c.execute("SELECT * FROM qa")
-    data = c.fetchall()
-    conn.close()
-    return data
+    def add(self, question, answer):
+        self.db.insert('qa', (None, question, answer, None, None))
 
-def delete_data(question):
-    conn = sqlite3.connect("qa.db")
-    c = conn.cursor()
-    c.execute("DELETE FROM qa WHERE question=?", (question,))
-    conn.commit()
-    conn.close()
+    def view_all(self):
+        return self.db.select('qa')
 
-def update_data(question, answer):
-    conn = sqlite3.connect("qa.db")
-    c = conn.cursor()
-    c.execute("UPDATE qa SET answer=? WHERE question=?", (answer, question))
-    conn.commit()
-    conn.close()
+    def delete(self, question):
+        self.db.delete('qa', f"question='{question}'")
 
-def main():
-    st.title("Q&A Management")
+    def update(self, question, answer):
+        self.db.update('qa', 'answer', answer, f"question='{question}'")
 
-    menu = ["View all", "Add", "Update", "Delete"]
-    choice = st.sidebar.selectbox("Select Menu", menu)
+    def rebuild_index(self):
+        index = FaissQAIndex()
+        datas = self.db.select('qa', columns='question, answer')
+        for data in datas:
+            index.add_data(data)
+        index.build_index()
 
-    if choice == "View all":
-        st.subheader("View all Q&A")
-        result = view_all_data()
-        df = pd.DataFrame(result, columns=["Question", "Answer"])
-        st.dataframe(df)
+    def main(self):
+        st.title("Q&A Management")
 
-    elif choice == "Add":
-        st.subheader("Add a new Q&A")
-        question = st.text_input("Question")
-        answer = st.text_input("Answer")
-        if st.button("Add Q&A"):
-            add_data(question, answer)
-            st.success("Q&A added successfully")
+        menu = ["View all", "Add", "Update", "Delete", "Rebuild index"]
+        choice = st.sidebar.selectbox("Select Menu", menu)
 
-    elif choice == "Update":
-        st.subheader("Update Q&A")
-        question = st.text_input("Question to Update")
-        answer = st.text_input("New Answer")
-        if st.button("Update Q&A"):
-            update_data(question, answer)
-            st.success("Q&A updated successfully")
+        if choice == "View all":
+            st.subheader("View all Q&A")
+            result = self.view_all()
+            df = pd.DataFrame(result, columns=["ID", "Question", "Answer", "Create Time", "Update Time"])
+            st.dataframe(df)
 
-    elif choice == "Delete":
-        st.subheader("Delete Q&A")
-        question = st.text_input("Question to Delete")
-        if st.button("Delete Q&A"):
-            delete_data(question)
-            st.success("Q&A deleted successfully")
+        elif choice == "Add":
+            st.subheader("Add a new Q&A")
+            question = st.text_input("Question")
+            answer = st.text_input("Answer")
+            if st.button("Add Q&A"):
+                self.add(question, answer)
+                st.success("Q&A added successfully")
+
+        elif choice == "Update":
+            st.subheader("Update Q&A")
+            question = st.text_input("Question to Update")
+            answer = st.text_input("New Answer")
+            if st.button("Update Q&A"):
+                self.update(question, answer)
+                st.success("Q&A updated successfully")
+
+        elif choice == "Delete":
+            st.subheader("Delete Q&A")
+            question = st.text_input("Question to Delete")
+            if st.button("Delete Q&A"):
+                self.delete(question)
+                st.success("Q&A deleted successfully")
+        elif choice == "Rebuild index":
+            st.subheader("Rebuild index")
+            if st.button("Rebuild index"):
+                self.rebuild_index()
+                st.success("Index rebuilt successfully")
 
 if __name__ == "__main__":
-    create_table()
-    main()
+    app = QAApp()
+    app.main()

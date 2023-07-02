@@ -9,7 +9,12 @@ class FaissQAIndex:
         self.data = []
 
     def add_data(self, data):
-        self.data.append(data)
+        question, answer = data
+        for i, (q, a) in enumerate(self.data):
+            if q == question:
+                self.data[i] = (question, answer)  # 更新答案
+                return
+        self.data.append(data)  # 问题不存在，添加新数据
 
     def build_index(self):
         question_vectors = np.array(
