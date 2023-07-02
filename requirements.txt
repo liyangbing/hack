@@ -16,3 +16,5 @@ cchardet
 websocket-client
 azure-cognitiveservices-speech
 streamlit
+faiss-cpu
+sentence_transformers

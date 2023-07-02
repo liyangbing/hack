@@ -28,6 +28,12 @@ voice_glm = VOICE_AZURE
 
 whisper_local = False
 
+redis_host = "localhost"
+redis_port = 6379
+sqllite_db = "/mnt/data/hack/dataset/db.sqlite3"
+qa_jsonl = "/mnt/data/hack/dataset/qa.jsonl"
+vector_distance = 5.0
+
 embedding_model_name = "text-embedding-ada-002"
 gpt_name = "gpt-35"
 EMBEDDING_DEVICE = "cuda" if torch.cuda.is_available(
