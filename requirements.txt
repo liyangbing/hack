@@ -19,3 +19,4 @@ streamlit
 faiss-cpu
 sentence_transformers
 streamlit
+transformers[agents]
