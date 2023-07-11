@@ -113,7 +113,6 @@ def chat():
         if is_from_audio:
             response_data['from_audio_data'] = from_audio_text
 
-
     response = Response(json.dumps(response_data), mimetype='application/json')
     end_time = time.time()
     logging.debug("chat elase time: %s秒", end_time - start)
