@@ -25,7 +25,7 @@ class ChatSimpleGPT(Chat):
         logging.debug("cache ChatSimpleGPT init")
         # self.memory = ConversationBufferWindowMemory(memory_key="chat_history", k=num_of_round)
         self.llm_chain = LLMChain(
-            llm=OpenAI(),
+            llm=OpenAI(max_tokens=1024),
             prompt=self.promptTemplate,
          #    memory=self.memory,
             verbose=True
