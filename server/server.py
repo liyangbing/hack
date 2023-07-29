@@ -128,9 +128,9 @@ def index():
 
 # 
 def send_message_callback(message):
-    socketio.emit('message', message)
+    socketio.emit('gptMessage', message)
 
-@socketio.on('message')
+@socketio.on('chatMessage')
 def handle_message(data):
     print('received message: ' + data)
     chat_glm_impl.chat_stream(data, send_message_callback)
