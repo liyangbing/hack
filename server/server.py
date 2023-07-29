@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import random
+from flask_socketio import SocketIO, emit
 import time
-from flask import Flask, request
-from werkzeug.wrappers import Response
+from flask import Flask, request,render_template
+
+from werkzeug.wrappers import Response 
 import json
 import json
 import random
@@ -29,7 +31,9 @@ def get_random_element_and_index(arr):
     return index + 1, arr[index]
 
 app = Flask(__name__)
-CORS(app)  # 默认允许所有跨域请求
+#CORS(app)  # 默认允许所有跨域请求
+socketio = SocketIO(app, cors_allowed_origins="*", transports=['polling', 'websocket'])
+
 
 # 初始化ChatGLM
 if chat_glm == CHAT_GLM_35:
@@ -118,6 +122,16 @@ def chat():
     logging.debug("chat elase time: %s秒", end_time - start)
     return response
 
+@app.route('/stream')
+def index():
+    return render_template('index.html')
+
+@socketio.on('message')
+def handle_message(data):
+    print('received message: ' + data)
+    answer = chat_glm_impl.chat_stream(data)
+    socketio.emit('message', answer)
     
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=50002)
+    socketio.run(app, host='0.0.0.0',port=50002, debug=True)
+

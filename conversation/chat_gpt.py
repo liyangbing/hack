@@ -8,6 +8,8 @@ from conversation.chat import Chat
 import langchain
 from langchain.cache import InMemoryCache
 from database.faiss_qa_db import FaissQAIndex
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+
 
 from database.sqllite_db import SQLiteDB
 
@@ -28,6 +30,15 @@ class ChatSimpleGPT(Chat):
             llm=OpenAI(max_tokens=1024),
             prompt=self.promptTemplate,
          #    memory=self.memory,
+            verbose=True
+        )
+
+        self.llm_stream_chain = LLMChain(
+            llm=OpenAI(max_tokens=1024,
+                       streaming=True,
+                       callbacks=[StreamingStdOutCallbackHandler()]
+                       ),
+            prompt=self.promptTemplate,
             verbose=True
         )
 
@@ -64,6 +75,22 @@ class ChatSimpleGPT(Chat):
         end_time = time.time()
         logging.debug("ChatSimpleGPT action elase time: %s秒, answer: %s, action: %s", end_time - start_time, answer, result)
         return result
+    
+    def chat_stream(self, question, callback):
+        start_time = time.time()
+        vector_result = self.faiss.search_by_distance(question, config.distance_threshold)
+        logging.info("ChatSimpleGPT ask question %s, distance_threshold: %f, vector_result: %s", 
+                     question, config.distance_threshold,vector_result)
+        
+        # 根据vector_result hit判断是否命中
+        if vector_result["hit"]:
+            answer = vector_result["answer"]
+        else:
+            answer = self.llm_chain.predict(human_input=question)
+        end_time = time.time()
+        logging.debug("ChatSimpleGPT ask elase time: %s秒, question: %s, answer: %s", end_time - start_time, question, answer)
+        
+        return answer
 
     def build_faiss_index(self):
         db = SQLiteDB(config.sqllite_db)

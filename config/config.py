@@ -30,8 +30,8 @@ whisper_local = False
 
 redis_host = "localhost"
 redis_port = 6379
-sqllite_db = "/mnt/data/hack/dataset/db.sqlite3"
-qa_jsonl = "/mnt/data/hack/dataset/qa.jsonl"
+sqllite_db = "/Users/lyb/code/aitest/hack/dataset/zhibo/db.sqlite3"
+qa_jsonl = "/Users/lyb/code/aitest/hack/dataset/zhibo/qa.jsonl"
 #定义向量距离阈值
 distance_threshold = 5
 
@@ -108,6 +108,8 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logging.getLogger("watchdog.observers.inotify_buffer").setLevel(logging.WARNING)
 
 openai.api_key = os.environ["OPENAI_API_KEY"]
+openai.api_base = "https://api.openai-proxy.com/v1"
+
 
 AZURE_SPEECH_KEY = os.environ["AZURE_SPEECH_KEY"]
 AZURE_SPEECH_REGION = os.environ["AZURE_SPEECH_REGION"]

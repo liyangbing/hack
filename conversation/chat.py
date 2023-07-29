@@ -5,3 +5,6 @@ class Chat():
         pass
     def action(self, text):
         pass
+
+    def chat_stream(self, text, callback):
+        pass
