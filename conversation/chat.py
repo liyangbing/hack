@@ -1,7 +1,7 @@
 #定义一个抽象类
 class Chat():
 
-    def chat(self, text):
+    def ask(self, text):
         pass
     def action(self, text):
         pass
