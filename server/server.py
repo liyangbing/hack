@@ -129,7 +129,7 @@ def index():
 @socketio.on('message')
 def handle_message(data):
     print('received message: ' + data)
-    answer = chat_glm_impl.chat(data)
+    answer = chat_glm_impl.ask(data)
     socketio.emit('message', answer)
     
 if __name__ == '__main__':
