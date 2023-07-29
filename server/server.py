@@ -126,11 +126,14 @@ def chat():
 def index():
     return render_template('index.html')
 
+# 
+def send_message_callback(message):
+    socketio.emit('message', message)
+
 @socketio.on('message')
 def handle_message(data):
     print('received message: ' + data)
-    answer = chat_glm_impl.ask(data)
-    socketio.emit('message', answer)
+    chat_glm_impl.chat_stream(data, send_message_callback)
     
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0',port=50002, debug=True)

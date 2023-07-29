@@ -13,6 +13,11 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
 from database.sqllite_db import SQLiteDB
 
+# 定义一个函数来检查字符串是否包含一个断句的标点符号
+def contains_sentence_break(s):
+    sentence_breaks = ['!', '?', '\n', '，', '。', '！', '？', '\n']
+    return any(break_char in s for break_char in sentence_breaks)
+
 class ChatSimpleGPT(Chat):
 
     def __init__(self, num_of_round=10):
@@ -82,14 +87,45 @@ class ChatSimpleGPT(Chat):
         logging.info("ChatSimpleGPT ask question %s, distance_threshold: %f, vector_result: %s", 
                      question, config.distance_threshold,vector_result)
         
+        answer = None  
+
         # 根据vector_result hit判断是否命中
         if vector_result["hit"]:
             answer = vector_result["answer"]
+            callback(answer)
         else:
-            answer = self.llm_chain.predict(human_input=question)
+            # send a ChatCompletion request to count to 100
+            response = openai.ChatCompletion.create(
+                model='gpt-3.5-turbo',
+                messages=[
+                    {'role': 'user', 'content': question}
+                ],
+                max_tokens=2048,
+                temperature=0,
+                stream=True  # again, we set stream=True
+            )
+
+            # create variables to collect the stream of chunks
+            collected_line_messages = []
+            # iterate through the stream of events
+            for chunk in response:
+                chunk_time = time.time() - start_time
+                chunk_message = chunk['choices'][0]['delta']
+                collected_line_messages.append(chunk_message)
+                if contains_sentence_break(chunk_message.get('content', '')):
+                    line_reply_content = ''.join([m.get('content', '') for m in collected_line_messages])
+
+                    print(f"Message received {chunk_time:.2f} seconds after request: {line_reply_content}")
+                    callback(line_reply_content)
+                    collected_line_messages = []  # 清空收集的消息，以便收集下一组
+
+            if len(collected_line_messages) > 0:
+                line_reply_content = ''.join([m.get('content', '') for m in collected_line_messages])
+                print(f"Message received {chunk_time:.2f} seconds after request: {line_reply_content}")
+                callback(line_reply_content)
+        
         end_time = time.time()
         logging.debug("ChatSimpleGPT ask elase time: %s秒, question: %s, answer: %s", end_time - start_time, question, answer)
-        
         return answer
 
     def build_faiss_index(self):
