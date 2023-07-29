@@ -136,5 +136,5 @@ def handle_message(data):
     chat_glm_impl.chat_stream(data, send_message_callback)
     
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0',port=50002, debug=True)
+    socketio.run(app, host='0.0.0.0',port=50002, debug=True,allow_unsafe_werkzeug=True)
 
