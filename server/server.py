@@ -126,6 +126,10 @@ def chat():
 def index():
     return render_template('index.html')
 
+@app.route('/pic')
+def pic():
+    return render_template('pic.html')
+
 # 
 def send_message_callback(message):
     # Ensure message is in correct format

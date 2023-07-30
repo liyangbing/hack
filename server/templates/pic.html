@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>AI Storybook</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Amatic+SC:wght@700&display=swap');
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            font-family: 'Amatic SC', cursive;
+            font-size: 22px;
+            line-height: 32px;
+            color: #666;
+            word-wrap: break-word !important;
+            font-family: 'Amatic SC', cursive;
+        }
+
+        h1 {
+            font-size: 70px;
+        }
+
+        #question-page {
+            text-align: center;
+            padding-top: 10%;
+        }
+
+        #question {
+            margin-top: 5px;
+            width: 60%;
+            padding: 5px;
+            font-size: 30px;
+            border: none;
+            border-radius: 5px;
+        }
+
+        #submit-question {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 25px;
+            background-color: #6495ed;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        #submit-question:hover {
+            background-color: #537ac6;
+        }
+
+        #storybook-page {
+            display: none;
+            text-align: center;
+            padding-top: 5%;
+        }
+
+        #back-to-question {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 20px;
+            background-color: #6495ed;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        #back-to-question:hover {
+            background-color: #537ac6;
+        }
+
+        .content {
+            max-width: 900px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .image {
+            max-width: 100%;
+            max-height: 400px;  /* 调整最大高度为200px */
+            border-radius: 10px;
+            box-shadow: 0px 0px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .text {
+            margin: 20px;
+            font-size: 25px;
+            line-height: 34px;
+            color: #333;
+            max-height: 300px;  /* 调整最大高度为200px */
+            overflow-y: auto;   /* 如果文本过长，显示滚动条 */
+        }
+
+        .button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 20px;
+            background-color: #6495ed;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .button:hover {
+            background-color: #537ac6;
+        }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+
+<body>
+    <div id="question-page">
+        <h1>Welcome to the AI Storybook</h1>
+        <p>Type in a question and let the AI create a storybook for you!</p>
+        <input type="text" id="question" placeholder="Type your question here..." autofocus>
+        <button id="submit-question">Generate Storybook</button>
+    </div>
+
+    <div id="storybook-page">
+        <button id="back-to-question">Back to Question</button>
+        <div class="content">
+            <img class="image" id="storybook-image" src="">
+            <p class="text" id="storybook-text"></p>
+            <button class="button" id="previous">Previous</button>
+            <button class="button" id="next">Next</button>
+        </div>
+    </div>
+
+    <script>
+        var pages = [
+            { "image": "https://lyb123.oss-cn-beijing.aliyuncs.com/picture/dinosaur/1.jpeg", "text": "恐龙是一种已经灭绝的古老生物，它们在地球上生活了超过1亿6千万年。这些是不同种类的恐龙，它们有各种各样的形状和大小。" },
+            { "image": "https://lyb123.oss-cn-beijing.aliyuncs.com/picture/dinosaur/2.jpeg", "text": "恐龙像许多现代的鸟类和爬行动物一样，通过产卵来繁殖。这是一颗正在孵化的恐龙蛋。" }
+        ];
+        var currentPage = 0;
+
+        function showStorybookPage() {
+            if (pages.length > 0 && currentPage >= 0 && currentPage < pages.length) {
+                $('#storybook-image').attr('src', pages[currentPage].image);
+                $('#storybook-text').text(pages[currentPage].text);
+                $('#previous').prop('disabled', currentPage == 0);
+                $('#next').prop('disabled', currentPage == pages.length - 1);
+                $('#question-page').hide();
+                $('#storybook-page').fadeIn(500);
+            }
+        }
+
+        $(document).ready(function () {
+            $('#submit-question').click(function () {
+                currentPage = 0;
+                showStorybookPage();
+            });
+
+            $('#back-to-question').click(function () {
+                $('#storybook-page').hide();
+                $('#question-page').fadeIn(500);
+            });
+
+            $('#previous').click(function () {
+                if (currentPage > 0) {
+                    currentPage--;
+                    showStorybookPage();
+                }
+            });
+
+            $('#next').click(function () {
+                if (currentPage < pages.length - 1) {
+                    currentPage++;
+                    showStorybookPage();
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
