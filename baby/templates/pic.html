@@ -16,6 +16,20 @@
             font-family: 'Amatic SC', cursive;
         }
 
+        #mask {
+            display: none;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2;
+            cursor: pointer;
+        }
+
         h1 {
             font-size: 70px;
         }
@@ -44,6 +58,11 @@
             cursor: pointer;
             border-radius: 5px;
             transition: background-color 0.3s ease;
+        }
+
+        #submit-question:disabled {
+            background-color: #999;
+            cursor: not-allowed;
         }
 
         #submit-question:hover {
@@ -75,14 +94,15 @@
         }
 
         .content {
-            max-width: 900px;
+            width: 100%;
             margin: 0 auto;
             text-align: center;
         }
 
         .image {
             max-width: 100%;
-            max-height: 400px;  /* 调整最大高度为200px */
+            max-height: 512px;
+            object-fit: cover;
             border-radius: 10px;
             box-shadow: 0px 0px 35px rgba(0, 0, 0, 0.1);
         }
@@ -92,8 +112,8 @@
             font-size: 25px;
             line-height: 34px;
             color: #333;
-            max-height: 300px;  /* 调整最大高度为200px */
-            overflow-y: auto;   /* 如果文本过长，显示滚动条 */
+            max-height: 300px;
+            overflow-y: auto;
         }
 
         .button {
@@ -116,6 +136,7 @@
 </head>
 
 <body>
+    <div id="mask"></div>
     <div id="question-page">
         <h1>Welcome to the AI Storybook</h1>
         <p>Type in a question and let the AI create a storybook for you!</p>
@@ -134,45 +155,54 @@
     </div>
 
     <script>
-        var pages = [
-            { "image": "https://lyb123.oss-cn-beijing.aliyuncs.com/picture/dinosaur/1.jpeg", "text": "恐龙是一种已经灭绝的古老生物，它们在地球上生活了超过1亿6千万年。这些是不同种类的恐龙，它们有各种各样的形状和大小。" },
-            { "image": "https://lyb123.oss-cn-beijing.aliyuncs.com/picture/dinosaur/2.jpeg", "text": "恐龙像许多现代的鸟类和爬行动物一样，通过产卵来繁殖。这是一颗正在孵化的恐龙蛋。" }
-        ];
+        var pages = [];
         var currentPage = 0;
 
         function showStorybookPage() {
-            if (pages.length > 0 && currentPage >= 0 && currentPage < pages.length) {
-                $('#storybook-image').attr('src', pages[currentPage].url);
-                $('#storybook-text').text(pages[currentPage].text);
-                $('#previous').prop('disabled', currentPage == 0);
-                $('#next').prop('disabled', currentPage == pages.length - 1);
-                $('#question-page').hide();
-                $('#storybook-page').fadeIn(500);
+            $('#storybook-image').attr('src', pages[currentPage].url);
+            $('#storybook-text').text(pages[currentPage].text);
+            if (currentPage === 0) {
+                $('#previous').hide();
+            } else {
+                $('#previous').show();
+            }
+            if (currentPage === pages.length - 1) {
+                $('#next').hide();
+            } else {
+                $('#next').show();
             }
         }
 
         $(document).ready(function () {
             $('#submit-question').click(function () {
                 var question = $('#question').val();
+                $(this).prop('disabled', true);
+                $('#mask').show();
                 $.ajax({
                     url: '/chat',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({ prompt: question }),
                     success: function (response) {
-                        pages = response;  // 更新pages数组
+                        pages = response;
                         currentPage = 0;
                         showStorybookPage();
+                        $('#question-page').hide();
+                        $('#storybook-page').show();
+                        $('#mask').hide();
+                        $('#submit-question').prop('disabled', false);
                     },
                     error: function (error) {
                         console.log(error);
+                        $('#mask').hide();
+                        $('#submit-question').prop('disabled', false);
                     }
-                });x
+                });
             });
 
             $('#back-to-question').click(function () {
+                $('#question-page').show();
                 $('#storybook-page').hide();
-                $('#question-page').fadeIn(500);
             });
 
             $('#previous').click(function () {
