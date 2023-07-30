@@ -35,6 +35,8 @@ qa_jsonl = "/Users/lyb/code/aitest/hack/dataset/zhibo/qa.jsonl"
 #定义向量距离阈值
 distance_threshold = 5
 
+
+
 embedding_model_name = "text-embedding-ada-002"
 gpt_name = "gpt-35"
 EMBEDDING_DEVICE = "cuda" if torch.cuda.is_available(
@@ -113,3 +115,11 @@ openai.api_base = "https://api.openai-proxy.com/v1"
 
 AZURE_SPEECH_KEY = os.environ["AZURE_SPEECH_KEY"]
 AZURE_SPEECH_REGION = os.environ["AZURE_SPEECH_REGION"]
+
+OSS_ACCESS_KEY_ID = os.environ["OSS_ACCESS_KEY_ID"]
+OSS_ACCESS_KEY_SECRET = os.environ["OSS_ACCESS_KEY_SECRET"]
+OSS_ENDPOINT = 'oss-cn-beijing.aliyuncs.com'
+OSS_BUCKET = 'lyb123'
+OSS_PREFIX = 'ai-baby/'
+
+
