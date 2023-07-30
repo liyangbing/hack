@@ -128,12 +128,33 @@ def index():
 
 # 
 def send_message_callback(message):
-    socketio.emit('gptMessage', message)
+    # Ensure message is in correct format
+    if not isinstance(message, dict) or 'messageId' not in message or 'messageText' not in message or 'finished' not in message:
+        print('Error: Invalid message format')
+        return
+
+    # Convert dict to JSON and emit message
+    message_json = json.dumps(message)
+    socketio.emit('gptMessage', message_json)
 
 @socketio.on('chatMessage')
 def handle_message(data):
-    print('received message: ' + data)
-    chat_glm_impl.chat_stream(data, send_message_callback)
+    # Parse JSON data
+    try:
+        data_json = json.loads(data)
+    except json.JSONDecodeError:
+        print('Error: Invalid JSON data')
+        return
+
+    # Ensure data is in correct format
+    if not isinstance(data_json, dict) or 'messageId' not in data_json or 'messageText' not in data_json or 'forceUpdate' not in data_json:
+        print('Error: Invalid data format')
+        return
+
+    print('Received message: ', data_json)
+
+    # Pass data to chat stream function
+    chat_glm_impl.chat_stream(data_json, send_message_callback)
     
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0',port=50002, debug=True,allow_unsafe_werkzeug=True)

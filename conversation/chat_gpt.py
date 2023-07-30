@@ -83,22 +83,26 @@ class ChatSimpleGPT(Chat):
     
     def chat_stream(self, question, callback):
         start_time = time.time()
-        vector_result = self.faiss.search_by_distance(question, config.distance_threshold)
+        vector_result = self.faiss.search_by_distance(question['messageText'], config.distance_threshold)
         logging.info("ChatSimpleGPT ask question %s, distance_threshold: %f, vector_result: %s", 
-                     question, config.distance_threshold,vector_result)
+                     question['messageText'], config.distance_threshold,vector_result)
         
         answer = None  
 
         # 根据vector_result hit判断是否命中
         if vector_result["hit"]:
             answer = vector_result["answer"]
-            callback(answer)
+            callback({
+                'messageId': question['messageId'],
+                'messageText': answer,
+                'finished': '1'
+            })
         else:
             # send a ChatCompletion request to count to 100
             response = openai.ChatCompletion.create(
                 model='gpt-3.5-turbo',
                 messages=[
-                    {'role': 'user', 'content': question}
+                    {'role': 'user', 'content': question['messageText']}
                 ],
                 max_tokens=2048,
                 temperature=0,
@@ -116,14 +120,20 @@ class ChatSimpleGPT(Chat):
                     line_reply_content = ''.join([m.get('content', '') for m in collected_line_messages])
 
                     print(f"Message received {chunk_time:.2f} seconds after request: {line_reply_content}")
-                    callback(line_reply_content)
+                    callback({
+                        'messageId': question['messageId'],
+                        'messageText': line_reply_content,
+                        'finished': '0'
+                    })
                     collected_line_messages = []  # 清空收集的消息，以便收集下一组
 
-            if len(collected_line_messages) > 0:
-                line_reply_content = ''.join([m.get('content', '') for m in collected_line_messages])
-                print(f"Message received {chunk_time:.2f} seconds after request: {line_reply_content}")
-                callback(line_reply_content)
-        
+            line_reply_content = ''.join([m.get('content', '') for m in collected_line_messages])
+            print(f"Message received {chunk_time:.2f} seconds after request: {line_reply_content}")
+            callback({
+                    'messageId': question['messageId'],
+                    'messageText': line_reply_content,
+                    'finished': '1'
+                })        
         end_time = time.time()
         logging.debug("ChatSimpleGPT ask elase time: %s秒, question: %s, answer: %s", end_time - start_time, question, answer)
         return answer
