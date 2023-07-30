@@ -21,3 +21,4 @@ sentence_transformers
 streamlit
 transformers[agents]
 flask_socketio
+oss2
