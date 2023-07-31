@@ -1,3 +1,4 @@
+from io import BytesIO
 import oss2
 from typing import Optional
 

@@ -1,26 +1,41 @@
+from io import BytesIO
 import json
 import time
+import uuid
 from langchain import LLMChain, PromptTemplate
 from langchain.llms import OpenAI
 from config.config import logging
+import config.config as config
 import langchain
 from langchain.cache import InMemoryCache
 from database.faiss_qa_db import FaissQAIndex
+from baby.stable import PicGenerator
 
-sqllite_db = "/Users/lyb/code/aitest/hack/dataset/zhibo/db.sqlite3"
+sqllite_db = "/opt/hack/dataset/zhibo/db.sqlite3"
+
+temp_file_dir = "/opt/temp/"
 
 distance_threshold = 3
 
 from database.sqllite_db import SQLiteDB
+from database.oss_db import OSSDB
+
+picGenerator = PicGenerator()
+
+ossDB = OSSDB(config.OSS_ACCESS_KEY_ID, config.OSS_ACCESS_KEY_SECRET, 
+              config.OSS_ENDPOINT, config.OSS_BUCKET, config.OSS_PREFIX)
 
 
 chat_gpt_question_template = """
     你是一个自然科学家，需要创建一个10页的绘本来解答孩子的问题
     要求如下：
-    1、答案要尽可能的全面，从多角度回答
+    1、回答要尽可能的全面，从多角度回答
     2、每页需要有一个图像描述和一个相关的文本描述
-    3、直接给出json答案,不需要注释或解释，答案是可以python解析的
-    4、答案例子,要包括不少于10条：
+    3、直接给出json答案,不需要注释或解释
+    4、回答例子,要包括不少于10条：
+    5、下面是一个答案的例子，答案是一个json数组
+    6、回答内容不要有任何多于的解释，仅仅包括json数组，可以python解析
+
     [
     {{"image": "A dinosaur hatching from an egg.", "text": "这是一个正在孵化的恐龙蛋，恐龙宝宝就要从中破壳而出。你知道吗，恐龙是从蛋中孵化出来的。"}},
     {{"image": "A young dinosaur with its mother.", "text": "这是一只年轻的恐龙和它的妈妈，恐龙妈妈会照顾小恐龙，直到它们能够自己找食物和保护自己。"}},
@@ -33,11 +48,16 @@ chat_gpt_question_template = """
     {{"image": "A scientist studying a dinosaur bone.", "text": "这是一位正在研究恐龙骨头的科学家，科学家通过研究恐龙骨骼来了解它们的生理结构。"}},
     {{"image": "Children looking at a dinosaur model in a theme park.", "text": "这是一些在主题公园里看恐龙模型的孩子，虽然恐龙已经灭绝，但我们可以通过模型和电影来感受它们的壮观。"}}
     ]
-    问题: {human_input}
+    下面是问题
+    {human_input}
 """
 
-class Pic():
+def generate_random_filename():
+    # 使用uuid模块生成一个UUID，并去除其中的破折号(-)和大写字母
+    random_filename = str(uuid.uuid4()).replace('-', '').lower()
+    return random_filename
 
+class Pic():
     def __init__(self, num_of_round=10):
         self.num_of_round = num_of_round
         self.promptTemplate = PromptTemplate(
@@ -67,8 +87,9 @@ class Pic():
             answer = vector_result["answer"]
         else:
             answer_string = self.llm_chain.predict(human_input=question)
-            print(answer_string)
+            print("=======", answer_string)
              # 将字符串解析为Python对象
+            
             answer = json.loads(answer_string)
             for item in answer:
                 item["url"] = self.get_image_url(item["image"])
@@ -78,10 +99,18 @@ class Pic():
         
         return answer
 
-    def get_image_url(self,string: str) -> str:
-        # This is a mock function. Replace this with your actual function
+    def get_image_url(self,image_text: str) -> str:
+        image = picGenerator.generate(image_text)
+        image_bytes_io = BytesIO()
+        image.save(image_bytes_io, format='PNG')
+        oss_file_name = generate_random_filename() + ".png"
+
+        image.save(temp_file_dir + oss_file_name)
+
+        ossDB.upload_file(temp_file_dir + oss_file_name, oss_file_name)
+
         # to call the real API that generates a picture based on the string.
-        return f"https://lyb123.oss-cn-beijing.aliyuncs.com/picture/dinosaur/1.jpeg"
+        return f"https://{config.OSS_BUCKET}.{config.OSS_ENDPOINT}/{config.OSS_PREFIX}{oss_file_name}"
 
     def build_faiss_index(self):
         db = SQLiteDB(sqllite_db)
