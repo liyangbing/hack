@@ -15,7 +15,7 @@
 
     <script>
        $(document).ready(function () {
-            var socket = io.connect('http://127.0.0.1:50002');
+            var socket = io.connect('http://47.92.85.241:50002');
 
             $('#send').click(function () {
                 var message = {
@@ -28,7 +28,19 @@
             });
 
             socket.on('gptMessage', function (data) {
-                var gptMessage = JSON.parse(data);
+                console.log(data);
+                 var gptMessage;
+                if (typeof data === 'string') {
+                    try {
+                        gptMessage = JSON.parse(data);
+                    } catch (e) {
+                        console.error("Error parsing JSON string: ", e);
+                    }
+                } else if (typeof data === 'object') {
+                    gptMessage = data;
+                } else {
+                    console.error("Unexpected data type");
+                }
                 $('#messages').append('<li>' + gptMessage.messageText + '</li>');
                 if (gptMessage.finished === '1') {
                     // 如果消息已结束，可以在这里添加一些逻辑处理

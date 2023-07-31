@@ -15,7 +15,7 @@ from database.sqllite_db import SQLiteDB
 
 # 定义一个函数来检查字符串是否包含一个断句的标点符号
 def contains_sentence_break(s):
-    sentence_breaks = ['!', '?', '\n', '，', '。', '！', '？', '\n']
+    sentence_breaks = ['：','!', '?', '\n', '，', '。', '！', '？', '\n']
     return any(break_char in s for break_char in sentence_breaks)
 
 class ChatSimpleGPT(Chat):
@@ -102,6 +102,7 @@ class ChatSimpleGPT(Chat):
             response = openai.ChatCompletion.create(
                 model='gpt-3.5-turbo',
                 messages=[
+                    {'role': 'system', 'content': '内容不要包含英文字符或单词'},
                     {'role': 'user', 'content': question['messageText']}
                 ],
                 max_tokens=2048,
@@ -117,15 +118,16 @@ class ChatSimpleGPT(Chat):
                 chunk_message = chunk['choices'][0]['delta']
                 collected_line_messages.append(chunk_message)
                 if contains_sentence_break(chunk_message.get('content', '')):
-                    line_reply_content = ''.join([m.get('content', '') for m in collected_line_messages])
+                    if len(collected_line_messages) > 10:
+                        line_reply_content = ''.join([m.get('content', '') for m in collected_line_messages])
 
-                    print(f"Message received {chunk_time:.2f} seconds after request: {line_reply_content}")
-                    callback({
-                        'messageId': question['messageId'],
-                        'messageText': line_reply_content,
-                        'finished': '0'
-                    })
-                    collected_line_messages = []  # 清空收集的消息，以便收集下一组
+                        print(f"Message received {chunk_time:.2f} seconds after request: {line_reply_content}")
+                        callback({
+                            'messageId': question['messageId'],
+                            'messageText': line_reply_content,
+                            'finished': '0'
+                        })
+                        collected_line_messages = []  # 清空收集的消息，以便收集下一组
 
             line_reply_content = ''.join([m.get('content', '') for m in collected_line_messages])
             print(f"Message received {chunk_time:.2f} seconds after request: {line_reply_content}")

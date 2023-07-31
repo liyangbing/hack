@@ -1,38 +1,42 @@
 # -*- coding: utf-8 -*-
 
-import random
-from flask_socketio import SocketIO, emit
-import time
-from flask import Flask, request,render_template
+import eventlet
+eventlet.monkey_patch()
 
-from werkzeug.wrappers import Response 
-import json
-import json
-import random
-from requests_toolbelt.multipart.encoder import MultipartEncoder
-from flask_cors import CORS
-
-from config.config import *
-
-from conversation.chat_chatglm import ChatGLM6B
-from conversation.chat_gpt import ChatSimpleGPT
-from speech.speech_vits import SpeechVits
-from speech.speech_azure import SpeechAzure
-from speech.speech_whisper import SpeechWhisper
-
+from werkzeug.wrappers import Response
+from flask import Flask, request, render_template
 import base64
+from speech.speech_whisper import SpeechWhisper
+from speech.speech_azure import SpeechAzure
+from speech.speech_vits import SpeechVits
+from conversation.chat_gpt import ChatSimpleGPT
+from conversation.chat_chatglm import ChatGLM6B
+from config.config import *
+from flask_cors import CORS
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+import json
+import time
+from flask_socketio import SocketIO, emit
+import random
+
+
 
 # 定义数组
-array = ["welcome", "chuckle", "thinking", "thinking2", "crossarm", "showing", "thanks", "thumbsup", "talk"]
+array = ["welcome", "chuckle", "thinking", "thinking2",
+         "crossarm", "showing", "thanks", "thumbsup", "talk"]
 
 # 定义函数来随机返回数组中的一个元素及其索引（索引从1开始）
+
+
 def get_random_element_and_index(arr):
     index = random.randint(0, len(arr) - 1)
     return index + 1, arr[index]
 
+
 app = Flask(__name__)
-#CORS(app)  # 默认允许所有跨域请求
-socketio = SocketIO(app, cors_allowed_origins="*", transports=['polling', 'websocket'])
+# CORS(app)  # 默认允许所有跨域请求
+socketio = SocketIO(app, cors_allowed_origins="*",
+                    transports=['polling', 'websocket'], logger=True, engineio_logger=True)
 
 
 # 初始化ChatGLM
@@ -41,7 +45,7 @@ if chat_glm == CHAT_GLM_35:
 if chat_glm == CHAT_GLM_6B:
     chat_glm_impl = ChatGLM6B()
 
-# 初始化voice_gml   
+# 初始化voice_gml
 if voice_glm == VOICE_VITS:
     voice_glm_impl = SpeechVits()
 if voice_glm == VOICE_AZURE:
@@ -57,7 +61,7 @@ def home():
     return response
 
 
-# API返回的格式：1,text，2，audio（base64编码的wav） 
+# API返回的格式：1,text，2，audio（base64编码的wav）
 # 3，motionIndex：回答对应动作的index（1，2，3，4，5，6，7，8，9）
 # 4，motionDesc：回答对应的动作指令（welcome,chuckle,thinking,thinking2,crossarm,showing,thanks,thumbsup,talk)
 @app.route('/chat', methods=['POST', 'GET'])
@@ -77,7 +81,8 @@ def chat():
         return Response(json.dumps({'error': 'key error'}), mimetype='application/json')
 
      # 打印data的数据类型
-    logging.debug("data key: %s, prompt: %s, data_type: %s", key, prompt, data_type)
+    logging.debug("data key: %s, prompt: %s, data_type: %s",
+                  key, prompt, data_type)
 
     # 如果是音频先转为文字
     is_from_audio = False
@@ -90,10 +95,10 @@ def chat():
         from_audio_text = prompt
 
     # 获取生成式内容
-    
+
     answer = chat_glm_impl.ask(prompt)
     action_answer = chat_glm_impl.action(answer)
-   
+
     logging.debug("result: %s, action %s", answer, action_answer)
     idx, val = get_random_element_and_index(array)
     for i in range(len(array)):
@@ -104,7 +109,7 @@ def chat():
 
     # 生成应答
     response_data = {
-        'type':data_type,
+        'type': data_type,
         'motionIndex': str(idx),
         'motionDesc': val,
         'data': answer
@@ -122,15 +127,19 @@ def chat():
     logging.debug("chat elase time: %s秒", end_time - start)
     return response
 
+
 @app.route('/stream')
 def index():
     return render_template('index.html')
+
 
 @app.route('/pic')
 def pic():
     return render_template('pic.html')
 
-# 
+#
+
+
 def send_message_callback(message):
     # Ensure message is in correct format
     if not isinstance(message, dict) or 'messageId' not in message or 'messageText' not in message or 'finished' not in message:
@@ -139,27 +148,41 @@ def send_message_callback(message):
 
     # Convert dict to JSON and emit message
     message_json = json.dumps(message)
-    socketio.emit('gptMessage', message_json)
+    logging.info("message_json: %s", message_json)
+    socketio.emit('gptMessage', message)
+
 
 @socketio.on('chatMessage')
 def handle_message(data):
+    if not data:
+        logging.info('Error: No data received')
+        return
     # Parse JSON data
     try:
-        data_json = json.loads(data)
+        # data不是dict类型，需要转换
+        if data != None and not isinstance(data, dict):
+            data_json = json.loads(data)
+        else:
+            data_json = data
     except json.JSONDecodeError:
-        print('Error: Invalid JSON data')
+        logging.error('Error: Invalid JSON data')
         return
 
     # Ensure data is in correct format
     if not isinstance(data_json, dict) or 'messageId' not in data_json or 'messageText' not in data_json or 'forceUpdate' not in data_json:
-        print('Error: Invalid data format')
+        logging.info('Error: Invalid data format')
         return
 
-    print('Received message: ', data_json)
+    if not data_json['messageText']:
+        logging.info('Error: messageText is null')
+        return
+
+    # Pretty print dict using json.dumps
+    print(json.dumps(data_json, indent=4))
 
     # Pass data to chat stream function
     chat_glm_impl.chat_stream(data_json, send_message_callback)
-    
-if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0',port=50002, debug=True,allow_unsafe_werkzeug=True)
 
+
+if __name__ == '__main__':
+    socketio.run(app, host='0.0.0.0', port=50002, debug=False)
