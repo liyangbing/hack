@@ -1,3 +1,5 @@
+from database.oss_db import OSSDB
+from database.sqllite_db import SQLiteDB
 from io import BytesIO
 import json
 import time
@@ -17,12 +19,10 @@ temp_file_dir = "/opt/temp/"
 
 distance_threshold = 3
 
-from database.sqllite_db import SQLiteDB
-from database.oss_db import OSSDB
 
 picGenerator = PicGenerator()
 
-ossDB = OSSDB(config.OSS_ACCESS_KEY_ID, config.OSS_ACCESS_KEY_SECRET, 
+ossDB = OSSDB(config.OSS_ACCESS_KEY_ID, config.OSS_ACCESS_KEY_SECRET,
               config.OSS_ENDPOINT, config.OSS_BUCKET, config.OSS_PREFIX)
 
 
@@ -52,10 +52,12 @@ chat_gpt_question_template = """
     {human_input}
 """
 
+
 def generate_random_filename():
     # 使用uuid模块生成一个UUID，并去除其中的破折号(-)和大写字母
     random_filename = str(uuid.uuid4()).replace('-', '').lower()
     return random_filename
+
 
 class Pic():
     def __init__(self, num_of_round=10):
@@ -74,32 +76,46 @@ class Pic():
         )
 
         logging.info("init vector store,use db: %s", sqllite_db)
+          # 添加数据到向量索引并重新建立索引
+        self.db = SQLiteDB(config.sqllite_db)
+        self.faiss_index = FaissQAIndex()
+
         self.faiss = self.build_faiss_index()
-        
+
+      
+
     def pic(self, question):
         start_time = time.time()
-        vector_result = self.faiss.search_by_distance(question, distance_threshold)
-        logging.info("ChatSimpleGPT ask question %s, distance_threshold: %f, vector_result: %s", 
-                     question, distance_threshold,vector_result)
-        
+        vector_result = self.faiss.search_by_distance(
+            question, distance_threshold)
+        logging.info("ChatSimpleGPT ask question %s, distance_threshold: %f, vector_result: %s",
+                     question, distance_threshold, vector_result)
+
         # 根据vector_result hit判断是否命中
         if vector_result["hit"]:
             answer = vector_result["answer"]
         else:
             answer_string = self.llm_chain.predict(human_input=question)
-            print("=======", answer_string)
-             # 将字符串解析为Python对象
-            
+
+            # 将字符串解析为Python对象
             answer = json.loads(answer_string)
             for item in answer:
-                item["url"] = self.get_image_url(item["image"])
+                pic_url = self.get_image_url(item["image"])
+                item["url"] = pic_url
+
+            answer_string = json.dumps(answer)
+            # 添加数据到数据库
+            self.db.insert(config.sqllite_db_table, [None, question, answer_string])
+            self.faiss_index.add_data((question, answer_string))
+            self.faiss_index.build_index()
 
         end_time = time.time()
-        logging.debug("ChatSimpleGPT ask elase time: %s秒, question: %s, answer: %s", end_time - start_time, question, answer)
-        
+        logging.debug("ChatSimpleGPT ask elase time: %s秒, question: %s, answer: %s",
+                      end_time - start_time, question, answer)
+
         return answer
 
-    def get_image_url(self,image_text: str) -> str:
+    def get_image_url(self, image_text: str) -> str:
         image = picGenerator.generate(image_text)
         image_bytes_io = BytesIO()
         image.save(image_bytes_io, format='PNG')
@@ -113,12 +129,9 @@ class Pic():
         return f"https://{config.OSS_BUCKET}.{config.OSS_ENDPOINT}/{config.OSS_PREFIX}{oss_file_name}"
 
     def build_faiss_index(self):
-        db = SQLiteDB(sqllite_db)
         faiss_index = FaissQAIndex()
-        datas = db.select('qa', columns='question, answer')
+        datas = self.db.select(config.sqllite_db_table, columns='question, answer')
         for data in datas:
             faiss_index.add_data(data)
         faiss_index.build_index()
         return faiss_index
-
-

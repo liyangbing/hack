@@ -2,7 +2,7 @@ import sqlite3
 from config import config
 
 class SQLiteDB:
-    def __init__(self, db_file):
+    def __init__(self, db_file=config.sqllite_db):
         self.conn = sqlite3.connect(db_file)
         self.cursor = self.conn.cursor()
 

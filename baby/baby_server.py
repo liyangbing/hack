@@ -29,12 +29,11 @@ def pic_html():
 @app.route('/chat', methods=['POST'])
 def chat():
     data = request.get_json()
-    print(data)
+    logging.info("recevie chat data: %s", data)
     text = data['prompt']
-    print(text)
     response = pic_server.pic(text)
     # jsonify将Python对象转换为JSON格式
-    print(response)
+    logging.info("chat response: %s", response)
     return jsonify(response)
 
 if __name__ == '__main__':
