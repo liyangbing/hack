@@ -49,17 +49,3 @@ class SQLiteDB:
     def close(self):
         self.cursor.close()
         self.conn.close()
-
-# 示例用法
-if __name__ == "__main__":
-    db = SQLiteDB(config.sqllite_db)
-
-    # 创建问答表
-    db.create_table('qa', ['id INTEGER PRIMARY KEY', 'question TEXT', 'answer TEXT', 'create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP','update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP'])
-
-    # 遍历所有表
-    result = db.get_all_tables()
-    for table in result:
-        print(table[0])
-
-    db.close()

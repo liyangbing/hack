@@ -21,7 +21,6 @@ def home():
     response = Response(json.dumps(data), mimetype='application/json')
     return response
 
-
 @app.route('/pic')
 def pic_html():
     return render_template('pic.html')
