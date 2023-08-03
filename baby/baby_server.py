@@ -36,5 +36,5 @@ def chat():
     return jsonify(response)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0',port=50002, debug=True)
+    app.run(host='0.0.0.0',port=50002, debug=True,ssl_context=('certificate.pem', 'privatekey.pem'))
 
