@@ -4,7 +4,7 @@ import eventlet
 eventlet.monkey_patch()
 
 from werkzeug.wrappers import Response
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, send_from_directory
 import base64
 from speech.speech_whisper import SpeechWhisper
 from speech.speech_azure import SpeechAzure
@@ -60,6 +60,10 @@ def home():
     response = Response(json.dumps(data), mimetype='application/json')
     return response
 
+# Route to serve static files from the 'static' directory
+@app.route('/static/<path:path>')
+def send_static(path):
+    return send_from_directory('static', path)
 
 # API返回的格式：1,text，2，audio（base64编码的wav）
 # 3，motionIndex：回答对应动作的index（1，2，3，4，5，6，7，8，9）
@@ -133,9 +137,9 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/pic')
+@app.route('/zhibo')
 def pic():
-    return render_template('pic.html')
+    return render_template('index_zhibo.html')
 
 #
 
