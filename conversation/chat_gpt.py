@@ -88,21 +88,24 @@ class ChatSimpleGPT(Chat):
                      question['messageText'], config.distance_threshold,vector_result)
         
         answer = None  
+        orderId = 0
 
         # 根据vector_result hit判断是否命中
         if vector_result["hit"]:
             answer = vector_result["answer"]
+            orderId = orderId + 1
             callback({
                 'messageId': question['messageId'],
                 'messageText': answer,
-                'finished': '1'
+                'finished': '1',
+                'orderId': str(orderId)
             })
         else:
             # send a ChatCompletion request to count to 100
             response = openai.ChatCompletion.create(
                 model='gpt-3.5-turbo',
                 messages=[
-                    {'role': 'system', 'content': '内容不要包含英文字符或单词'},
+                    {'role': 'system', 'content': '内容不要包含英文字符或单词，你的名字叫知韵'},
                     {'role': 'user', 'content': question['messageText']}
                 ],
                 max_tokens=2048,
@@ -113,6 +116,7 @@ class ChatSimpleGPT(Chat):
             # create variables to collect the stream of chunks
             collected_line_messages = []
             # iterate through the stream of events
+            # 定义一个orderId，表示是第几句话
             for chunk in response:
                 chunk_time = time.time() - start_time
                 chunk_message = chunk['choices'][0]['delta']
@@ -120,21 +124,25 @@ class ChatSimpleGPT(Chat):
                 if contains_sentence_break(chunk_message.get('content', '')):
                     if len(collected_line_messages) > 10:
                         line_reply_content = ''.join([m.get('content', '') for m in collected_line_messages])
-
+                        orderId = orderId + 1
                         print(f"Message received {chunk_time:.2f} seconds after request: {line_reply_content}")
                         callback({
                             'messageId': question['messageId'],
                             'messageText': line_reply_content,
-                            'finished': '0'
+                            'finished': '0',
+                            'orderId': str(orderId)
                         })
                         collected_line_messages = []  # 清空收集的消息，以便收集下一组
 
             line_reply_content = ''.join([m.get('content', '') for m in collected_line_messages])
+            orderId = orderId + 1
+
             print(f"Message received {chunk_time:.2f} seconds after request: {line_reply_content}")
             callback({
                     'messageId': question['messageId'],
                     'messageText': line_reply_content,
-                    'finished': '1'
+                    'finished': '1',
+                    'orderId': str(orderId)
                 })        
         end_time = time.time()
         logging.debug("ChatSimpleGPT ask elase time: %s秒, question: %s, answer: %s", end_time - start_time, question, answer)

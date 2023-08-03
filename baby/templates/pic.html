@@ -3,17 +3,22 @@
 
 <head>
     <title>AI Storybook</title>
+        <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Amatic+SC:wght@700&display=swap');
-
-        body {
+       body {
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            font-family: 'Amatic SC', cursive;
-            font-size: 22px;
-            line-height: 32px;
+            font-family: 'Baloo 2', cursive;
+            font-size: 26px;
+            line-height: 36px;
             color: #666;
             word-wrap: break-word !important;
-            font-family: 'Amatic SC', cursive;
+        }
+
+        h1 {
+            font-size: 80px;
+            color: #4a47a3;
+            text-align: center;
+            animation: bounce 2s infinite;
         }
 
         #mask {
@@ -28,10 +33,6 @@
             background-color: rgba(0, 0, 0, 0.5);
             z-index: 2;
             cursor: pointer;
-        }
-
-        h1 {
-            font-size: 70px;
         }
 
         #question-page {
@@ -52,7 +53,7 @@
             margin-top: 20px;
             padding: 10px 20px;
             font-size: 25px;
-            background-color: #6495ed;
+            background-color: #ff61a6;
             color: #fff;
             border: none;
             cursor: pointer;
@@ -66,7 +67,7 @@
         }
 
         #submit-question:hover {
-            background-color: #537ac6;
+            background-color: #ee4e8d;
         }
 
         #storybook-page {
@@ -80,7 +81,7 @@
             top: 20px;
             left: 20px;
             font-size: 20px;
-            background-color: #6495ed;
+            background-color: #ff61a6;
             color: #fff;
             border: none;
             cursor: pointer;
@@ -90,7 +91,7 @@
         }
 
         #back-to-question:hover {
-            background-color: #537ac6;
+            background-color: #ee4e8d;
         }
 
         .content {
@@ -109,8 +110,8 @@
 
         .text {
             margin: 20px;
-            font-size: 25px;
-            line-height: 34px;
+            font-size: 28px;
+            line-height: 38px;
             color: #333;
             max-height: 300px;
             overflow-y: auto;
@@ -119,8 +120,8 @@
         .button {
             margin: 10px;
             padding: 10px 20px;
-            font-size: 20px;
-            background-color: #6495ed;
+            font-size: 22px;
+            background-color: #ff61a6;
             color: #fff;
             border: none;
             cursor: pointer;
@@ -129,12 +130,42 @@
         }
 
         .button:hover {
-            background-color: #537ac6;
+            background-color: #ee4e8d;
+        }
+
+        #start-record,
+        #stop-record {
+            padding: 10px;
+            font-size: 30px;
+            background-color: #ff61a6;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        #start-record:hover,
+        #stop-record:hover {
+            background-color: #ee4e8d;
+        }
+
+        #start-record i,
+        #stop-record i {
+            font-size: 1.5em;
+            color: #fff;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-20px);}
+            60% {transform: translateY(-10px);}
         }
     </style>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-</head>
-
+    <!-- Removed @font-face declarations -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    </head>
+   
 <body>
     <div id="mask"></div>
     <div id="question-page">
@@ -142,21 +173,62 @@
         <p>Type in a question and let the AI create a storybook for you!</p>
         <input type="text" id="question" placeholder="Type your question here..." autofocus>
         <button id="submit-question">Generate Storybook</button>
+        <button id="start-record"><i class="fas fa-microphone"></i></button>
+        <button id="stop-record" style="display: none;"><i class="fas fa-microphone-slash"></i></button>
+
     </div>
 
     <div id="storybook-page">
-        <button id="back-to-question">Back to Question</button>
+        <button id="back-to-question"><i class="fas fa-arrow-left"></i></button>
         <div class="content">
             <img class="image" id="storybook-image" src="">
             <p class="text" id="storybook-text"></p>
-            <button class="button" id="previous">Previous</button>
-            <button class="button" id="next">Next</button>
+            <button class="button" id="previous"><i class="fas fa-arrow-left"></i></button>
+            <button class="button" id="next"><i class="fas fa-arrow-right"></i></button>
         </div>
     </div>
 
     <script>
         var pages = [];
         var currentPage = 0;
+        var recognition;
+
+        if (!('webkitSpeechRecognition' in window)) {
+            alert('Your browser does not support speech recognition. Please use Google Chrome.');
+        } else {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'cmn-Hans-CN';  // Set the language to Simplified Chinese
+            recognition.onresult = function (event) {
+                var interim_transcript = '';
+                var final_transcript = '';
+                for (var i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        final_transcript += event.results[i][0].transcript;
+                    } else {
+                        interim_transcript += event.results[i][0].transcript;
+                    }
+                }
+                $('#question').val(final_transcript + interim_transcript);
+            }
+            recognition.onerror = function (event) {
+                console.log(event.error);
+            }
+        }
+
+        $('#start-record').click(function () {
+            recognition.start();
+            $('#start-record').hide();
+            $('#stop-record').show();
+        });
+
+        $('#stop-record').click(function () {
+            recognition.stop();
+            $('#start-record').show();
+            $('#stop-record').hide();
+        });
+
 
         function showStorybookPage() {
             $('#storybook-image').attr('src', pages[currentPage].url);

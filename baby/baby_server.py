@@ -14,13 +14,17 @@ CORS(app)  # 默认允许所有跨域请求
 
 pic_server = Pic()
 
+os.environ["HTTP_PROXY"] = "http://ga.dp.tech:8118"
+os.environ["HTTPS_PROXY"] = "http://ga.dp.tech:8118"
+
+
+
 
 @app.route('/')
 def home():
     data = {'name': 'John', 'age': 30, 'city': 'New York'}
     response = Response(json.dumps(data), mimetype='application/json')
     return response
-
 
 @app.route('/pic')
 def pic_html():
@@ -29,14 +33,13 @@ def pic_html():
 @app.route('/chat', methods=['POST'])
 def chat():
     data = request.get_json()
-    print(data)
+    logging.info("recevie chat data: %s", data)
     text = data['prompt']
-    print(text)
     response = pic_server.pic(text)
     # jsonify将Python对象转换为JSON格式
-    print(response)
+    logging.info("chat response: %s", response)
     return jsonify(response)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0',port=50002, debug=True)
+    app.run(host='0.0.0.0',port=50002, debug=True,ssl_context=('certificate.pem', 'privatekey.pem'))
 
