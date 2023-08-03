@@ -36,7 +36,7 @@ def get_random_element_and_index(arr):
 app = Flask(__name__)
 # CORS(app)  # 默认允许所有跨域请求
 socketio = SocketIO(app, cors_allowed_origins="*",
-                    transports=['polling', 'websocket'], logger=True, engineio_logger=True)
+                    transports=['polling', 'websocket'])
 
 
 # 初始化ChatGLM
@@ -185,4 +185,4 @@ def handle_message(data):
 
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=50002, debug=False)
+    socketio.run(app, host='0.0.0.0', port=50002, debug=True)
