@@ -23,4 +23,5 @@ transformers[agents]
 flask_socketio
 eventlet
 oss2
+omegaconf
 

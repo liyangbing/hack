@@ -14,6 +14,11 @@ CORS(app)  # 默认允许所有跨域请求
 
 pic_server = Pic()
 
+os.environ["HTTP_PROXY"] = "http://ga.dp.tech:8118"
+os.environ["HTTPS_PROXY"] = "http://ga.dp.tech:8118"
+
+
+
 
 @app.route('/')
 def home():
