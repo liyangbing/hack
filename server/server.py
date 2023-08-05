@@ -19,7 +19,8 @@ import time
 from flask_socketio import SocketIO, emit
 import random
 
-
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 # 定义数组
 array = ["welcome", "chuckle", "thinking", "thinking2",
@@ -56,9 +57,7 @@ voice_glm_whisper = SpeechWhisper()
 
 @app.route('/')
 def home():
-    data = {'name': 'John', 'age': 30, 'city': 'New York'}
-    response = Response(json.dumps(data), mimetype='application/json')
-    return response
+    return render_template('index.html')
 
 # Route to serve static files from the 'static' directory
 @app.route('/static/<path:path>')
@@ -85,7 +84,7 @@ def chat():
         return Response(json.dumps({'error': 'key error'}), mimetype='application/json')
 
      # 打印data的数据类型
-    logging.debug("data key: %s, prompt: %s, data_type: %s",
+    logger.debug("data key: %s, prompt: %s, data_type: %s",
                   key, prompt, data_type)
 
     # 如果是音频先转为文字
@@ -103,7 +102,7 @@ def chat():
     answer = chat_glm_impl.ask(prompt)
     action_answer = chat_glm_impl.action(answer)
 
-    logging.debug("result: %s, action %s", answer, action_answer)
+    logger.debug("result: %s, action %s", answer, action_answer)
     idx, val = get_random_element_and_index(array)
     for i in range(len(array)):
         if array[i] == action_answer:
@@ -128,38 +127,35 @@ def chat():
 
     response = Response(json.dumps(response_data), mimetype='application/json')
     end_time = time.time()
-    logging.debug("chat elase time: %s秒", end_time - start)
+    logger.info("chat elase time: %s秒", end_time - start)
     return response
 
 
 @app.route('/stream')
 def index():
-    return render_template('index.html')
-
-
-@app.route('/zhibo')
-def pic():
-    return render_template('index_zhibo.html')
-
-#
-
+    return render_template('index_stream.html')
 
 def send_message_callback(message):
     # Ensure message is in correct format
     if not isinstance(message, dict) or 'messageId' not in message or 'messageText' not in message or 'finished' not in message:
-        print('Error: Invalid message format')
+        logger.info('Error: Invalid message format %s', message)
         return
 
     # Convert dict to JSON and emit message
     message_json = json.dumps(message)
-    logging.info("message_json: %s", message_json)
+    logger.info("message_json: %s", message_json)
     socketio.emit('gptMessage', message)
 
 
 @socketio.on('chatMessage')
 def handle_message(data):
+      # 开始时间
+    start = time.time()
+    logger.info("chatMessage handle_message: %s", data)
+    socketio.emit('chatMessage', data)
+
     if not data:
-        logging.info('Error: No data received')
+        logger.info('Error: No data received')
         return
     # Parse JSON data
     try:
@@ -169,23 +165,23 @@ def handle_message(data):
         else:
             data_json = data
     except json.JSONDecodeError:
-        logging.error('Error: Invalid JSON data')
+        logger.error('Error: Invalid JSON data')
         return
 
     # Ensure data is in correct format
     if not isinstance(data_json, dict) or 'messageId' not in data_json or 'messageText' not in data_json or 'forceUpdate' not in data_json:
-        logging.info('Error: Invalid data format')
+        logger.info('Error: Invalid data format')
         return
 
     if not data_json['messageText']:
-        logging.info('Error: messageText is null')
+        logger.info('Error: messageText is null')
         return
-
-    # Pretty print dict using json.dumps
-    print(json.dumps(data_json, indent=4))
 
     # Pass data to chat stream function
     chat_glm_impl.chat_stream(data_json, send_message_callback)
+
+    end_time = time.time()
+    logger.info("chatMessage elase time: %s秒", end_time - start)
 
 
 if __name__ == '__main__':
