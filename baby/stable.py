@@ -2,7 +2,7 @@ import torch
 from diffusers import StableDiffusionPipeline, DPMSolverMultistepScheduler
 
 model_id = "/data/stable-diffusion-2-1"
-cartoon_model = "/data/manmaruMix_v20.safetensors"
+cartoon_model = "/data/stableModel/manmaru.safetensors"
 
 system_prompt = ',for children book, cartoon style, high quality'
 
