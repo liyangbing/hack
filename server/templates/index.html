@@ -142,6 +142,9 @@
 			$('#messages').append($('<li class="chatMessage">').text('提问：' + chatMessage.messageText));
 			window.scrollTo(0, document.body.scrollHeight);
 		});
+
+		var currentGptMessageLi;
+
 		socket.on('gptMessage', function (data) {
 			console.log('gptMessage: ' + data);
 			var gptMessage;
@@ -156,10 +159,20 @@
 			} else {
 				console.error("Unexpected data type");
 			}
-			if (gptMessage.finished === '1') {
-				// 如果消息已结束，可以在这里添加一些逻辑处理
+
+			if (gptMessage.finished === '0') {
+				// 如果消息未结束，追加文本到同一行
+				if (currentGptMessageLi) {
+					currentGptMessageLi.append(document.createTextNode(gptMessage.messageText));
+				} else {
+					currentGptMessageLi = $('<li class="gptMessage">').text('GPT回复：' + gptMessage.messageText);
+					$('#messages').append(currentGptMessageLi);
+				}
+			} else if (gptMessage.finished === '1') {
+				// 如果消息已结束，追加到新行，并重置currentGptMessageLi
+				currentGptMessageLi = null;
 			}
-			$('#messages').append($('<li class="gptMessage">').text('GPT回复：' + gptMessage.messageText));
+			
 			window.scrollTo(0, document.body.scrollHeight);
 			//alert(msg);
 			//$('#btn_control').click();
