@@ -1,183 +1,60 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
 
 <head>
-	<title>Socket.IO chat</title>
-	<style>
-		* {
-			margin: 0;
-			padding: 0;
-			box-sizing: border-box;
-		}
-
-		body {
-			font: 13px Helvetica, Arial;
-		}
-
-		#btn_control {
-			padding: 20px;
-			display: flex;
-			justify-content: center;
-			display: inline-block;
-			margin: 30px auto;
-		}
-
-		form {
-			background: #000;
-			padding: 3px;
-			position: fixed;
-			bottom: 0;
-			width: 100%;
-		}
-
-		form input {
-			border: 0;
-			padding: 10px;
-			width: 90%;
-			margin-right: .5%;
-		}
-
-		form button {
-			width: 9%;
-			background: rgb(150, 150, 225);
-			border: none;
-			padding: 10px;
-		}
-
-		#messages {
-			list-style-type: none;
-			margin: 0;
-			padding: 10px;
-			float: left;
-		}
-
-		#messages li {
-			padding: 5px 5px;
-		}
-
-		#messages li:nth-child(odd) {
-			background: #eee;
-		}
-
-		#main {
-			text-align: center;
-			overflow: auto;
-			height: calc(100% - 30px);
-			margin-bottom: 40px;
-		}
-
-		.chatMessage {
-			margin: 5px;
-			display: flex;
-			flex-wrap: wrap;
-			font-weight: bold;
-		}
-
-		.gptMessage {
-			margin: 5px;
-			display: flex;
-			flex-wrap: wrap;
-			font-weight: bold;
-		}
-
-		#footer {
-			position: fixed;
-			bottom: 0;
-			right: 0px;
-			left: 0px;
-			height: 30px;
-		}
-	</style>
+    <title>Chat Room</title>
 </head>
 
 <body>
-	<div id="main">
-		<div><button id="btn_control">开始录音</button></div>
-		<br />
+    <ul id="messages"></ul>
+    <input id="message" />
+    <button id="send">Send</button>
 
-		<ul id="messages"></ul>
-	</div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-	<div id="footer">
-		<form id="myForm" action="">
-			<input id="result" type="text" autocomplete="off" placeholder="Type here..." /><button>Send</button>
-		</form>
-	</div>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
-	<script src="https://code.jquery.com/jquery-1.11.1.js"></script>
-	<script src="{{ url_for('static', filename='crypto-js.js') }}"></script>
-	<script src="{{ url_for('static', filename='index.umd.js') }}"></script>
-	<script src="{{ url_for('static', filename='index.js') }}"></script>
+    <script>
+       $(document).ready(function () {
+            var socket = io.connect('http://127.0.0.1:50002');
 
-	<script>
-		var APPID = "0ba69f96";
-		var API_SECRET = "ZDQwZTkwMjFmYmViYjUzOWEzYzFkYzNl";
-		var API_KEY = "9ce87cd3cee82fbc7bfd9c9a0c8dc29d";
-		var socket = io();
+            $('#send').click(function () {
+                var message = {
+                    messageId: generateMessageId(),  // 根据实际情况生成唯一的 messageId
+                    messageText: $('#message').val(),
+                    forceUpdate: 0  // 根据实际情况设置 forceUpdate
+                };
+                socket.emit('chatMessage', JSON.stringify(message));
+                $('#message').val('');
+            });
 
-		function isEmpty(value) {
-			return value === undefined || value === null || value.trim() === '';
-		}
+            socket.on('gptMessage', function (data) {
+                console.log(data);
+                 var gptMessage;
+                if (typeof data === 'string') {
+                    try {
+                        gptMessage = JSON.parse(data);
+                    } catch (e) {
+                        console.error("Error parsing JSON string: ", e);
+                    }
+                } else if (typeof data === 'object') {
+                    gptMessage = data;
+                } else {
+                    console.error("Unexpected data type");
+                }
+                $('#messages').append('<li>' + gptMessage.messageText + '</li>');
+                if (gptMessage.finished === '1') {
+                    // 如果消息已结束，可以在这里添加一些逻辑处理
+                }
+            });
+        });
 
-		$('form').submit(function () {
-			message = $('#result').val()
-			sendMessage(message);
-			$('#result').val('');
-			return false;
-		});
-		socket.on('chatMessage', function (data) {
-			console.log('chatMessge: ' + data);
-			var chatMessage;
-			if (typeof data === 'string') {
-				try {
-					chatMessage = JSON.parse(data);
-				} catch (e) {
-					console.error("Error parsing JSON string: ", e);
-				}
-			} else if (typeof data === 'object') {
-				chatMessage = data;
-			} else {
-				console.error("Unexpected data type");
-			}
-			$('#messages').append($('<li class="chatMessage">').text('提问：' + chatMessage.messageText));
-			window.scrollTo(0, document.body.scrollHeight);
-		});
+        // 生成唯一的 messageId
+        function generateMessageId() {
+            // 可以使用如 UUID 等机制生成唯一的 messageId
+            return "uniqueMessageId";
+        }
 
-		var currentGptMessageLi;
-
-		socket.on('gptMessage', function (data) {
-			console.log('gptMessage: ' + data);
-			var gptMessage;
-			if (typeof data === 'string') {
-				try {
-					gptMessage = JSON.parse(data);
-				} catch (e) {
-					console.error("Error parsing JSON string: ", e);
-				}
-			} else if (typeof data === 'object') {
-				gptMessage = data;
-			} else {
-				console.error("Unexpected data type");
-			}
-
-			if (gptMessage.finished === '0') {
-				// 如果消息未结束，追加文本到同一行
-				if (currentGptMessageLi) {
-					currentGptMessageLi.append(document.createTextNode(gptMessage.messageText));
-				} else {
-					currentGptMessageLi = $('<li class="gptMessage">').text('GPT回复：' + gptMessage.messageText);
-					$('#messages').append(currentGptMessageLi);
-				}
-			} else if (gptMessage.finished === '1') {
-				// 如果消息已结束，追加到新行，并重置currentGptMessageLi
-				currentGptMessageLi = null;
-			}
-			
-			window.scrollTo(0, document.body.scrollHeight);
-			//alert(msg);
-			//$('#btn_control').click();
-		});
-	</script>
+    </script>
 </body>
 
 </html>

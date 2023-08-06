@@ -13,8 +13,6 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
 from database.sqllite_db import SQLiteDB
 
-logger = logging.getLogger(__name__)
-
 # 定义一个函数来检查字符串是否包含一个断句的标点符号
 def contains_sentence_break(s):
     sentence_breaks = ['：','!', '?', '\n', '，', '。', '！', '？', '\n']
@@ -31,7 +29,7 @@ class ChatSimpleGPT(Chat):
             template=chat_gpt_question_template
         )
         langchain.llm_cache = InMemoryCache()
-        logger.debug("cache ChatSimpleGPT init")
+        logging.debug("cache ChatSimpleGPT init")
         # self.memory = ConversationBufferWindowMemory(memory_key="chat_history", k=num_of_round)
         self.llm_chain = LLMChain(
             llm=OpenAI(max_tokens=1024),
@@ -58,13 +56,13 @@ class ChatSimpleGPT(Chat):
             verbose=True
         )
 
-        logger.info("init vector store,use db: %s", config.sqllite_db)
+        logging.info("init vector store,use db: %s", config.sqllite_db)
         self.faiss = self.build_faiss_index()
         
     def ask(self, question):
         start_time = time.time()
         vector_result = self.faiss.search_by_distance(question, config.distance_threshold)
-        logger.info("ChatSimpleGPT ask question %s, distance_threshold: %f, vector_result: %s", 
+        logging.info("ChatSimpleGPT ask question %s, distance_threshold: %f, vector_result: %s", 
                      question, config.distance_threshold,vector_result)
         # 根据vector_result hit判断是否命中
         if vector_result["hit"]:
@@ -72,7 +70,7 @@ class ChatSimpleGPT(Chat):
         else:
             answer = self.llm_chain.predict(human_input=question)
         end_time = time.time()
-        logger.debug("ChatSimpleGPT ask elase time: %s秒, question: %s, answer: %s", end_time - start_time, question, answer)
+        logging.debug("ChatSimpleGPT ask elase time: %s秒, question: %s, answer: %s", end_time - start_time, question, answer)
         
         return answer
 
@@ -80,13 +78,13 @@ class ChatSimpleGPT(Chat):
         start_time = time.time()
         result = self.action_llm_chain.predict(human_input=answer)
         end_time = time.time()
-        logger.debug("ChatSimpleGPT action elase time: %s秒, answer: %s, action: %s", end_time - start_time, answer, result)
+        logging.debug("ChatSimpleGPT action elase time: %s秒, answer: %s, action: %s", end_time - start_time, answer, result)
         return result
     
     def chat_stream(self, question, callback):
         start_time = time.time()
         vector_result = self.faiss.search_by_distance(question['messageText'], config.distance_threshold)
-        logger.info("ChatSimpleGPT ask question %s, distance_threshold: %f, vector_result: %s", 
+        logging.info("ChatSimpleGPT ask question %s, distance_threshold: %f, vector_result: %s", 
                      question['messageText'], config.distance_threshold,vector_result)
         
         answer = None  
@@ -102,9 +100,7 @@ class ChatSimpleGPT(Chat):
                 'finished': '1',
                 'orderId': str(orderId)
             })
-            logger.info("ChatSimpleGPT ask question %s, distance_threshold: %f, vector_result: %s",answer, config.distance_threshold,vector_result)
         else:
-            logger.info("start chat gpt3.5 turbo stream")
             # send a ChatCompletion request to count to 100
             response = openai.ChatCompletion.create(
                 model='gpt-3.5-turbo',
@@ -129,7 +125,7 @@ class ChatSimpleGPT(Chat):
                     if len(collected_line_messages) > 10:
                         line_reply_content = ''.join([m.get('content', '') for m in collected_line_messages])
                         orderId = orderId + 1
-                        logger.info("Message received %f seconds after request: %s", chunk_time, line_reply_content)
+                        print(f"Message received {chunk_time:.2f} seconds after request: {line_reply_content}")
                         callback({
                             'messageId': question['messageId'],
                             'messageText': line_reply_content,
@@ -141,7 +137,7 @@ class ChatSimpleGPT(Chat):
             line_reply_content = ''.join([m.get('content', '') for m in collected_line_messages])
             orderId = orderId + 1
 
-            logger.info("Message received %f seconds after request: %s", chunk_time, line_reply_content)
+            print(f"Message received {chunk_time:.2f} seconds after request: {line_reply_content}")
             callback({
                     'messageId': question['messageId'],
                     'messageText': line_reply_content,
@@ -149,7 +145,7 @@ class ChatSimpleGPT(Chat):
                     'orderId': str(orderId)
                 })        
         end_time = time.time()
-        logger.info("ChatSimpleGPT ask elase time: %s秒, question: %s, answer: %s", end_time - start_time, question, answer)
+        logging.debug("ChatSimpleGPT ask elase time: %s秒, question: %s, answer: %s", end_time - start_time, question, answer)
         return answer
 
     def build_faiss_index(self):

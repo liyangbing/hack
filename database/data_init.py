@@ -3,7 +3,10 @@ from datetime import datetime
 from sqllite_db import SQLiteDB
 from config import config
 from database.faiss_qa_db import FaissQAIndex
+import os
 
+os.environ['HTTP_PROXY'] = 'http://ga.dp.tech:8118'
+os.environ['HTTPS_PROXY'] = 'http://ga.dp.tech:8118'
 
 db = SQLiteDB(config.sqllite_db)
 

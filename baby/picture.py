@@ -14,9 +14,9 @@ from langchain.cache import InMemoryCache
 from database.faiss_qa_db import FaissQAIndex
 from baby.stable import PicGenerator
 
-sqllite_db = "/opt/hack/dataset/zhibo/db.sqlite3"
+sqllite_db = "./dataset/zhibo/db.sqlite3"
 
-temp_file_dir = "/opt/temp/"
+temp_file_dir = "/data/temp/"
 
 distance_threshold = 3
 
@@ -36,6 +36,7 @@ chat_gpt_question_template = """
     3、回答例子,要包括不少于10条：
     4、下面是一个答案的例子，答案是一个json数组
     5、回答内容不要有任何多于的解释，仅仅包括json数组，可以python解析的json数组
+    6、回答的"image"部分，会作为图像生成的提示词；"text“部分，会变成给孩子讲解的文字描述
 
     例如，一个回答可能如下所示，在========之间，确保答案的格式和下面一模一样，最后一个json不要包含逗号，否则会解析失败：
 

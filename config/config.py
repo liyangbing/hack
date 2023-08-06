@@ -30,8 +30,9 @@ whisper_local = False
 
 redis_host = "localhost"
 redis_port = 6379
-sqllite_db = "/Users/lyb/code/aitest/hack/dataset/zhibo/db.sqlite3"
-qa_jsonl = "/Users/lyb/code/aitest/hack/dataset/zhibo/qa.jsonl"
+sqllite_db = "./dataset/zhibo/db.sqlite3"
+sqllite_db_table = "qa"
+qa_jsonl = "./dataset/zhibo/qa.jsonl"
 #定义向量距离阈值
 distance_threshold = 5
 

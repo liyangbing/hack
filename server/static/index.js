@@ -169,7 +169,8 @@
     
      // Trigger  submission
      const message = $('#result').val();
-    sendMessage(message);
+     if(!isEmpty(message))
+        socket.emit('chatMessage', message);
     $('#result').val('');
 
     };
@@ -205,18 +206,3 @@
     }
   };
 })();
-
-
-function sendMessage(message) { 
-  if (!isEmpty(message))
-    var message_json = {
-      messageId: generateMessageId(),  // 根据实际情况生成唯一的 messageId
-      messageText: message,
-      forceUpdate: 0  // 根据实际情况设置 forceUpdate
-    };
-  socket.emit('chatMessage', JSON.stringify(message_json));
-}
-
-function generateMessageId() {
-  return 'msg_' + Math.random().toString(36).substr(2, 9);
-}
